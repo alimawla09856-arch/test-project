@@ -1,0 +1,65 @@
+import "server-only";
+import { getConfig } from "@/lib/env";
+import type { ScopeAnalysis } from "@/lib/schemas/analysis";
+import type { AnalysisProvider, Lead } from "@/lib/types";
+import { analyzeWithClaude } from "./anthropic";
+import { toAiBrief } from "./brief";
+import { AnalysisError } from "./errors";
+import { analyzeHeuristically } from "./heuristic";
+import { analyzeWithOpenAI } from "./openai";
+import { buildSystemPrompt, buildUserMessage, type UserMessageOptions } from "./prompt";
+
+export { AnalysisError } from "./errors";
+
+export interface AnalysisOutcome {
+  analysis: ScopeAnalysis;
+  provider: AnalysisProvider;
+  model: string | null;
+  usage: Record<string, unknown> | null;
+  durationMs: number;
+  fallbackReason: string | null;
+}
+
+/**
+ * Run the scope & budget analysis in-process with the configured provider.
+ * Falls back to the rule-based estimator when the provider fails (unless
+ * AI_FALLBACK_TO_HEURISTIC=false), recording why in `fallbackReason`.
+ */
+export async function runAnalysis(lead: Lead, options: UserMessageOptions = {}): Promise<AnalysisOutcome> {
+  const config = getConfig();
+  const started = Date.now();
+  const system = buildSystemPrompt();
+  const user = buildUserMessage(toAiBrief(lead), options);
+
+  const heuristic = (fallbackReason: string | null): AnalysisOutcome => ({
+    analysis: analyzeHeuristically(lead),
+    provider: "heuristic",
+    model: null,
+    usage: null,
+    durationMs: Date.now() - started,
+    fallbackReason,
+  });
+
+  try {
+    if (config.ai.provider === "anthropic" && config.ai.anthropic) {
+      const result = await analyzeWithClaude({
+        apiKey: config.ai.anthropic.apiKey,
+        model: config.ai.anthropic.model,
+        effort: config.ai.effort,
+        system,
+        user,
+      });
+      return { ...result, provider: "anthropic", durationMs: Date.now() - started, fallbackReason: null };
+    }
+    if (config.ai.provider === "openai" && config.ai.openai) {
+      const result = await analyzeWithOpenAI({ apiKey: config.ai.openai.apiKey, model: config.ai.openai.model, system, user });
+      return { ...result, provider: "openai", durationMs: Date.now() - started, fallbackReason: null };
+    }
+    return heuristic(null);
+  } catch (error) {
+    const reason = error instanceof AnalysisError ? error.message : `Unexpected AI error: ${(error as Error).message}`;
+    console.error(`[ai] analysis for ${lead.reference} failed: ${reason}`);
+    if (config.ai.fallbackToHeuristic) return heuristic(reason);
+    throw error instanceof AnalysisError ? error : new AnalysisError(reason, "provider_error");
+  }
+}
