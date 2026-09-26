@@ -20,16 +20,19 @@ export const brand = {
   whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || null,
   /** Optional line shown in footers and the proposal PDF, e.g. "Beirut · Worldwide". */
   location: process.env.NEXT_PUBLIC_STUDIO_LOCATION || null,
-  /** Palette mirrored in the PDF renderer (react-pdf cannot read CSS variables). */
+  /** Path (from the public/ root) to the AM logo mark, used in the navbar, portal and PDF cover. */
+  logoPath: "/brand/am-logo.png",
+  /**
+   * Palette mirrored in the PDF renderer (react-pdf cannot read CSS variables).
+   * ember + navy are extracted directly from the AM logo mark.
+   */
   colors: {
     ink: "#07070b",
     inkSoft: "#12121a",
     ivory: "#f4f1ea",
     mist: "#a9a5a0",
-    ember: "#ff8a4c",
-    emberSoft: "#ffc59a",
-    glacier: "#5eead4",
-    iris: "#a99bff",
+    ember: "#d86f10",
+    navy: "#091873",
   },
 } as const;
 

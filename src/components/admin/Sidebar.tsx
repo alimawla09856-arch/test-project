@@ -38,7 +38,9 @@ export function Sidebar({ email, reviewCount }: { email: string; reviewCount: nu
               aria-current={active ? "page" : undefined}
               className={cn(
                 "flex shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] transition-colors",
-                active ? "bg-white/[0.08] text-ivory shadow-[inset_0_1px_0_rgb(255_255_255/0.08)]" : "text-mist hover:bg-white/[0.04] hover:text-ivory",
+                active
+                  ? "bg-navy-500/20 text-ivory shadow-[inset_0_1px_0_rgb(255_255_255/0.08)] ring-1 ring-inset ring-navy-400/30"
+                  : "text-mist hover:bg-white/[0.04] hover:text-ivory",
               )}
             >
               <item.icon className={cn("size-[18px]", active ? "text-ember-300" : "")} strokeWidth={1.7} />

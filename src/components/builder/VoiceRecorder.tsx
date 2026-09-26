@@ -27,6 +27,7 @@ export function VoiceRecorder({ onTranscript, className }: VoiceRecorderProps) {
   const [status, setStatus] = useState<Status>("idle");
   const [seconds, setSeconds] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [awaitingPermission, setAwaitingPermission] = useState(false);
   const [levels, setLevels] = useState<number[]>(() => Array(BAR_COUNT).fill(0.06));
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -97,8 +98,24 @@ export function VoiceRecorder({ onTranscript, className }: VoiceRecorderProps) {
 
   const start = useCallback(async () => {
     setError(null);
+
+    // If the browser already knows the mic is blocked, say so immediately —
+    // getUserMedia would reject silently with no native prompt to point at.
+    try {
+      const permission = await navigator.permissions.query({ name: "microphone" as PermissionName });
+      if (permission.state === "denied") {
+        setStatus("error");
+        setError("Microphone is blocked for this site — click the lock/site-info icon in your browser's address bar, allow the microphone, then try again.");
+        return;
+      }
+    } catch {
+      // Permissions API doesn't support "microphone" in this browser (e.g. Safari) — fall through to getUserMedia.
+    }
+
+    setAwaitingPermission(true);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setAwaitingPermission(false);
       streamRef.current = stream;
 
       const AudioContextCtor = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
@@ -136,8 +153,14 @@ export function VoiceRecorder({ onTranscript, className }: VoiceRecorderProps) {
           return s + 1;
         });
       }, 1000);
-    } catch {
-      setError("Microphone access was blocked — allow it in your browser to record a voice note.");
+    } catch (err) {
+      setAwaitingPermission(false);
+      const name = err instanceof DOMException ? err.name : "";
+      if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+        setError("No microphone was found on this device.");
+      } else {
+        setError("Microphone access was blocked — click the lock/site-info icon in your browser's address bar, allow the microphone, then try again.");
+      }
       setStatus("error");
       cleanup();
     }
@@ -162,17 +185,35 @@ export function VoiceRecorder({ onTranscript, className }: VoiceRecorderProps) {
   return (
     <div className={cn("rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4", className)}>
       <div className="flex items-center gap-3">
-        {status === "recording" ? (
-          <Button type="button" variant="danger" size="sm" onClick={stop} aria-label="Stop recording">
-            <Square className="size-3.5" fill="currentColor" />
-            Stop
-          </Button>
-        ) : (
-          <Button type="button" variant="outline" size="sm" onClick={start} loading={status === "processing"} aria-label="Record a voice note">
-            {status !== "processing" ? <Mic className="size-3.5" /> : null}
-            {status === "processing" ? "Transcribing…" : "Record a voice note"}
-          </Button>
-        )}
+        <div className="relative">
+          {awaitingPermission ? (
+            <div
+              role="status"
+              className="absolute bottom-full left-1/2 z-10 mb-2 w-max max-w-[220px] -translate-x-1/2 rounded-lg border border-ember-400/40 bg-ink-850 px-3 py-2 text-center text-[12px] leading-snug text-ivory shadow-lg"
+            >
+              👆 Click <strong>Allow</strong> in your browser&apos;s popup to enable your mic
+              <span className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-ink-850" />
+            </div>
+          ) : null}
+          {status === "recording" ? (
+            <Button type="button" variant="danger" size="sm" onClick={stop} aria-label="Stop recording">
+              <Square className="size-3.5" fill="currentColor" />
+              Stop
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={start}
+              loading={status === "processing" || awaitingPermission}
+              aria-label="Record a voice note"
+            >
+              {status !== "processing" && !awaitingPermission ? <Mic className="size-3.5" /> : null}
+              {awaitingPermission ? "Waiting for mic access…" : status === "processing" ? "Transcribing…" : "Record a voice note"}
+            </Button>
+          )}
+        </div>
 
         <div className="flex h-8 flex-1 items-center gap-[3px] overflow-hidden" aria-hidden>
           {levels.map((level, i) => (

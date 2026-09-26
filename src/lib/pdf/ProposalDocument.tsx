@@ -1,6 +1,8 @@
+import path from "node:path";
 import {
   Defs,
   Document,
+  Image,
   Link,
   Page,
   RadialGradient,
@@ -15,6 +17,8 @@ import { brand } from "@/config/brand";
 import { formatDate, formatMoney, formatWeeks } from "@/lib/format";
 import { paymentBreakdown, phaseOffsets } from "@/lib/proposals";
 import type { Lead, Proposal } from "@/lib/types";
+
+const LOGO_PATH = path.join(process.cwd(), "public", brand.logoPath.replace(/^\//, ""));
 
 /**
  * The client-facing proposal PDF (A4). Rendered on the server with
@@ -40,8 +44,7 @@ const C = {
   ivory: brand.colors.ivory,
   mist: brand.colors.mist,
   ember: brand.colors.ember,
-  emberSoft: brand.colors.emberSoft,
-  glacier: brand.colors.glacier,
+  navy: brand.colors.navy,
 };
 
 function createStyles(fonts: ProposalDocumentProps["fonts"]) {
@@ -50,13 +53,10 @@ function createStyles(fonts: ProposalDocumentProps["fonts"]) {
     coverInner: { flex: 1, paddingHorizontal: 56, paddingVertical: 52, justifyContent: "space-between" },
     brandRow: { flexDirection: "row", alignItems: "center", gap: 10 },
     monogram: {
-      width: 34,
-      height: 34,
-      borderRadius: 17,
-      borderWidth: 1,
-      borderColor: "#3a3a46",
-      alignItems: "center",
-      justifyContent: "center",
+      width: 36,
+      height: 29,
+      borderRadius: 6,
+      overflow: "hidden",
     },
     monogramText: { fontFamily: fonts.display, fontSize: 13, color: C.ivory },
     brandName: { fontSize: 9, letterSpacing: 2.4, color: C.mist, textTransform: "uppercase" },
@@ -176,19 +176,18 @@ export function ProposalDocument({ proposal, lead, shareUrl, fonts }: ProposalDo
               <Stop offset="0" stopColor={C.ember} stopOpacity={0.45} />
               <Stop offset="1" stopColor={C.ink} stopOpacity={0} />
             </RadialGradient>
-            <RadialGradient id="glacier" cx="0.95" cy="0.85" r="0.55">
-              <Stop offset="0" stopColor={C.glacier} stopOpacity={0.28} />
+            <RadialGradient id="navy" cx="0.95" cy="0.85" r="0.55">
+              <Stop offset="0" stopColor={C.navy} stopOpacity={0.45} />
               <Stop offset="1" stopColor={C.ink} stopOpacity={0} />
             </RadialGradient>
           </Defs>
           <Rect x={0} y={0} width={A4.width} height={A4.height} fill="url(#ember)" />
-          <Rect x={0} y={0} width={A4.width} height={A4.height} fill="url(#glacier)" />
+          <Rect x={0} y={0} width={A4.width} height={A4.height} fill="url(#navy)" />
         </Svg>
         <View style={styles.coverInner}>
           <View style={styles.brandRow}>
-            <View style={styles.monogram}>
-              <Text style={styles.monogramText}>{brand.monogram}</Text>
-            </View>
+            {/* eslint-disable-next-line jsx-a11y/alt-text -- react-pdf's Image is a PDF primitive, not an HTML <img>; it has no alt prop */}
+            <Image style={styles.monogram} src={LOGO_PATH} />
             <Text style={styles.brandName}>{brand.name}</Text>
           </View>
           <View>
