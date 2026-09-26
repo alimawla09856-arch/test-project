@@ -1,4 +1,5 @@
 import type { Estimate } from "@/lib/pricing/estimate";
+import type { PricingOverrides } from "@/lib/pricing/overrides";
 import type { NewProposal } from "@/lib/proposals";
 import type { Contact, Plan, Project } from "@/lib/schemas/lead";
 import type {
@@ -110,6 +111,10 @@ export interface Repository {
   claimIdempotencyKey(key: string, scope: string): Promise<{ status: "new" } | { status: "done"; response: unknown } | { status: "in_progress" }>;
   completeIdempotencyKey(key: string, response: unknown): Promise<void>;
   releaseIdempotencyKey(key: string): Promise<void>;
+
+  /** Admin-editable price overrides (Settings → Pricing). `null` = none set, use `catalog.ts` defaults. */
+  getPricingOverrides(): Promise<PricingOverrides | null>;
+  savePricingOverrides(overrides: PricingOverrides): Promise<void>;
 }
 
 export class NotFoundError extends Error {

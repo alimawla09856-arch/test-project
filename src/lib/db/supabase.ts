@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { PricingOverrides } from "@/lib/pricing/overrides";
 import type { NewProposal } from "@/lib/proposals";
 import type { AnalysisRecord, Lead, LeadEvent, LeadSummary, Proposal, ProposalStatus } from "@/lib/types";
 import {
@@ -469,5 +470,19 @@ export class SupabaseRepository implements Repository {
 
   async releaseIdempotencyKey(key: string) {
     check(await this.db.from("idempotency_keys").delete().eq("key", key), "releaseIdempotencyKey");
+  }
+
+  /* --------------------------- pricing overrides -------------------------- */
+
+  async getPricingOverrides(): Promise<PricingOverrides | null> {
+    const row = check(await this.db.from("pricing_overrides").select("data").eq("id", 1).maybeSingle(), "getPricingOverrides");
+    return row?.data ?? null;
+  }
+
+  async savePricingOverrides(overrides: PricingOverrides): Promise<void> {
+    check(
+      await this.db.from("pricing_overrides").upsert({ id: 1, data: overrides, updated_at: new Date().toISOString() }),
+      "savePricingOverrides",
+    );
   }
 }

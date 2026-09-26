@@ -1,6 +1,7 @@
 import { CheckCircle2, CircleDashed, TriangleAlert } from "lucide-react";
 import { getConfig } from "@/lib/env";
 import { PageHeader, Panel } from "@/components/admin/PageHeader";
+import { PricingSettings } from "@/components/admin/PricingSettings";
 import { CopyBlock, SeedDemoButton, TestWebhookButton } from "@/components/admin/SettingsClient";
 
 export const metadata = { title: "Settings" };
@@ -101,6 +102,10 @@ export default function SettingsPage() {
           </Panel>
         ) : null}
       </div>
+
+      <Panel title="Pricing" className="mt-4" action={<span className="text-[12px] text-fog">Overrides catalog.ts — applies immediately, no redeploy</span>}>
+        <PricingSettings />
+      </Panel>
     </>
   );
 }

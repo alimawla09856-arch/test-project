@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { estimateProject } from "@/lib/pricing/estimate";
+import { resolveFeatureMap, resolveServiceMap, sanitizeOverrides } from "@/lib/pricing/overrides";
 
 describe("estimateProject", () => {
   it("returns zeros without services", () => {
@@ -39,5 +40,40 @@ describe("estimateProject", () => {
 
   it("dedupes repeated services", () => {
     expect(estimateProject({ services: ["web-design", "web-design"] })).toEqual(estimateProject({ services: ["web-design"] }));
+  });
+
+  it("applies admin price overrides to the live estimate", () => {
+    const base = estimateProject({ services: ["web-design"] });
+    const overridden = estimateProject({ services: ["web-design"] }, { services: { "web-design": { price: { min: 100, max: 200 } } }, features: {} });
+    expect(overridden.max).toBeLessThan(base.max);
+  });
+
+  it("leaves the estimate unchanged when overrides are empty or unrelated", () => {
+    const base = estimateProject({ services: ["web-design"] });
+    expect(estimateProject({ services: ["web-design"] }, { services: {}, features: {} })).toEqual(base);
+    expect(estimateProject({ services: ["web-design"] }, { services: { "ai-automation": { price: { min: 1, max: 2 } } }, features: {} })).toEqual(base);
+  });
+});
+
+describe("pricing overrides", () => {
+  it("resolveServiceMap / resolveFeatureMap apply only the overridden fields", () => {
+    const overrides = sanitizeOverrides({ services: { "web-design": { price: { min: 111, max: 222 } } }, features: { cms: { price: 999 } } });
+    const services = resolveServiceMap(overrides);
+    expect(services["web-design"].price).toEqual({ min: 111, max: 222 });
+    expect(services["brand-identity"].price).not.toEqual({ min: 111, max: 222 });
+
+    const features = resolveFeatureMap(overrides);
+    expect(features.cms.price).toBe(999);
+    expect(features.cms.weeks).toBeGreaterThan(0); // untouched field keeps its catalog.ts default
+  });
+
+  it("sanitizeOverrides drops keys that don't match the current catalog", () => {
+    const clean = sanitizeOverrides({ services: { "not-a-real-service": { price: { min: 1, max: 2 } } }, features: {} });
+    expect(clean.services).toEqual({});
+  });
+
+  it("sanitizeOverrides handles null/undefined", () => {
+    expect(sanitizeOverrides(null)).toEqual({ services: {}, features: {} });
+    expect(sanitizeOverrides(undefined)).toEqual({ services: {}, features: {} });
   });
 });

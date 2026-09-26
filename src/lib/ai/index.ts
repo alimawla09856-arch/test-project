@@ -1,5 +1,7 @@
 import "server-only";
+import { getRepository } from "@/lib/db";
 import { getConfig } from "@/lib/env";
+import { sanitizeOverrides } from "@/lib/pricing/overrides";
 import type { ScopeAnalysis } from "@/lib/schemas/analysis";
 import type { AnalysisProvider, Lead } from "@/lib/types";
 import { analyzeWithClaude } from "./anthropic";
@@ -28,11 +30,12 @@ export interface AnalysisOutcome {
 export async function runAnalysis(lead: Lead, options: UserMessageOptions = {}): Promise<AnalysisOutcome> {
   const config = getConfig();
   const started = Date.now();
-  const system = buildSystemPrompt();
+  const overrides = sanitizeOverrides(await getRepository().getPricingOverrides());
+  const system = buildSystemPrompt(overrides);
   const user = buildUserMessage(toAiBrief(lead), options);
 
   const heuristic = (fallbackReason: string | null): AnalysisOutcome => ({
-    analysis: analyzeHeuristically(lead),
+    analysis: analyzeHeuristically(lead, overrides),
     provider: "heuristic",
     model: null,
     usage: null,

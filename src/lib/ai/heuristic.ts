@@ -3,16 +3,15 @@ import {
   BUDGET_MAP,
   CURRENCY,
   DELIVERY_PHASES,
-  FEATURE_MAP,
   GOALS,
   labelFor,
   SCALE_MAP,
-  SERVICE_MAP,
   TIMELINE_MAP,
   type FeatureKey,
   type ServiceKey,
 } from "@/config/catalog";
 import { estimateProject } from "@/lib/pricing/estimate";
+import { resolveFeatureMap, resolveServiceMap, type PricingOverrides } from "@/lib/pricing/overrides";
 import { normalizeAnalysis, type Deliverable, type ScopeAnalysis } from "@/lib/schemas/analysis";
 import type { Lead } from "@/lib/types";
 
@@ -54,19 +53,24 @@ const SERVICE_QUESTIONS: Partial<Record<ServiceKey, string[]>> = {
   "motion-3d": ["Where will the motion pieces be used (web, social, events)?", "Do you have product CAD files or references?"],
 };
 
-export function analyzeHeuristically(lead: Lead): ScopeAnalysis {
+export function analyzeHeuristically(lead: Lead, overrides?: PricingOverrides | null): ScopeAnalysis {
   const { project, plan, contact } = lead;
-  const estimate = estimateProject({
-    services: project.services,
-    features: project.features,
-    scale: project.scale,
-    timeline: plan.timeline,
-    languages: project.languages,
-  });
+  const serviceMap = resolveServiceMap(overrides);
+  const featureMap = resolveFeatureMap(overrides);
+  const estimate = estimateProject(
+    {
+      services: project.services,
+      features: project.features,
+      scale: project.scale,
+      timeline: plan.timeline,
+      languages: project.languages,
+    },
+    overrides,
+  );
   const scale = SCALE_MAP[project.scale];
   const timeline = TIMELINE_MAP[plan.timeline];
   const budget = BUDGET_MAP[plan.budget];
-  const services = project.services.map((key) => SERVICE_MAP[key]).filter(Boolean);
+  const services = project.services.map((key) => serviceMap[key]).filter(Boolean);
   const multiplier = scale.priceMultiplier * timeline.priceMultiplier * (1 - bundleDiscountRate(services.length));
 
   // Phases with durations derived from the estimate's mid-point.
@@ -110,7 +114,7 @@ export function analyzeHeuristically(lead: Lead): ScopeAnalysis {
     });
   }
   for (const key of project.features) {
-    const feature = FEATURE_MAP[key];
+    const feature = featureMap[key];
     if (!feature) continue;
     if (feature.price > 0) {
       deliverables.push({
@@ -144,7 +148,7 @@ export function analyzeHeuristically(lead: Lead): ScopeAnalysis {
       description: "Translation workflow, localised layouts and native-speaker review.",
       serviceKey: services[0]?.key ?? "other",
       phase: phaseName(2),
-      price: FEATURE_MAP.multilingual.price * scale.priceMultiplier * extraLanguages,
+      price: featureMap.multilingual.price * scale.priceMultiplier * extraLanguages,
       billing: "one_time",
       optional: false,
       estimatedHours: null,
@@ -167,7 +171,7 @@ export function analyzeHeuristically(lead: Lead): ScopeAnalysis {
   const selected = new Set<FeatureKey>(project.features);
   const upsellKeys = [...new Set(services.flatMap((s) => s.relatedFeatures))].filter((key) => !selected.has(key)).slice(0, 2);
   for (const key of upsellKeys) {
-    const feature = FEATURE_MAP[key];
+    const feature = featureMap[key];
     if (!feature || feature.price <= 0) continue;
     deliverables.push({
       title: feature.name,
@@ -263,7 +267,7 @@ export function analyzeHeuristically(lead: Lead): ScopeAnalysis {
     summary: `${clientName}${industry} is looking for ${serviceProse} to ${goalsText}. Budget: ${budget.label}; timeline: ${timeline.label}. Rule-based estimate ${estimate.min.toLocaleString("en-US")}–${estimate.max.toLocaleString("en-US")} ${CURRENCY}.`,
     clientNeeds: [
       ...project.goals.map((g) => labelFor(GOALS, g)),
-      ...project.features.slice(0, 3).map((f) => FEATURE_MAP[f]?.name ?? f),
+      ...project.features.slice(0, 3).map((f) => featureMap[f]?.name ?? f),
     ].slice(0, 6),
     projectType: serviceList,
     complexity,

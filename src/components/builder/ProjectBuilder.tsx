@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, RotateCcw, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { estimateProject } from "@/lib/pricing/estimate";
+import type { PricingOverrides } from "@/lib/pricing/overrides";
 import type { LeadSubmissionInput } from "@/lib/schemas/lead";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/components/ui/cn";
@@ -52,6 +53,7 @@ export function ProjectBuilder({ variant = "page" }: { variant?: BuilderVariant 
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<SubmissionResult | null>(null);
   const [honeypot, setHoneypot] = useState("");
+  const [pricingOverrides, setPricingOverrides] = useState<PricingOverrides | null>(null);
   const startedAt = useRef<number>(0);
   const rootRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -60,16 +62,34 @@ export function ProjectBuilder({ variant = "page" }: { variant?: BuilderVariant 
     startedAt.current = Date.now();
   }, []);
 
+  // Live estimate should reflect admin-edited prices (Settings → Pricing), not
+  // just the bundled catalog.ts defaults. Falls back to defaults if this fails.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/v1/catalog")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((body) => {
+        if (!cancelled && body?.overrides) setPricingOverrides(body.overrides);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const estimate = useMemo(
     () =>
-      estimateProject({
-        services: draft.project.services,
-        features: draft.project.features,
-        scale: draft.project.scale,
-        timeline: draft.plan.timeline || undefined,
-        languages: draft.project.languages,
-      }),
-    [draft.project.services, draft.project.features, draft.project.scale, draft.plan.timeline, draft.project.languages],
+      estimateProject(
+        {
+          services: draft.project.services,
+          features: draft.project.features,
+          scale: draft.project.scale,
+          timeline: draft.plan.timeline || undefined,
+          languages: draft.project.languages,
+        },
+        pricingOverrides,
+      ),
+    [draft.project.services, draft.project.features, draft.project.scale, draft.plan.timeline, draft.project.languages, pricingOverrides],
   );
 
   // Embed: keep the host iframe sized to the content.

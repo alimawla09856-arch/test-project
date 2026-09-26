@@ -1,9 +1,7 @@
 import {
   bundleDiscountRate,
   DELIVERY_PHASES,
-  FEATURE_MAP,
   SCALE_MAP,
-  SERVICE_MAP,
   TIMELINE_MAP,
   type FeatureKey,
   type LanguageKey,
@@ -11,6 +9,7 @@ import {
   type ServiceKey,
   type TimelineKey,
 } from "@/config/catalog";
+import { resolveFeatureMap, resolveServiceMap, type PricingOverrides } from "./overrides";
 
 /**
  * Indicative ("ballpark") estimate computed from the rate card.
@@ -58,9 +57,11 @@ const PRICE_BAND = { low: 0.15, high: 0.7 };
 const WEEKS_BAND = { low: 0.2, high: 0.75 };
 const band = (range: { min: number; max: number }, position: number) => range.min + (range.max - range.min) * position;
 
-export function estimateProject(input: EstimateInput): Estimate {
-  const services = [...new Set(input.services)].map((key) => SERVICE_MAP[key]).filter(Boolean);
-  const features = [...new Set(input.features ?? [])].map((key) => FEATURE_MAP[key]).filter(Boolean);
+export function estimateProject(input: EstimateInput, overrides?: PricingOverrides | null): Estimate {
+  const serviceMap = resolveServiceMap(overrides);
+  const featureMap = resolveFeatureMap(overrides);
+  const services = [...new Set(input.services)].map((key) => serviceMap[key]).filter(Boolean);
+  const features = [...new Set(input.features ?? [])].map((key) => featureMap[key]).filter(Boolean);
   const scale = SCALE_MAP[input.scale ?? "standard"];
   const timeline = TIMELINE_MAP[input.timeline ?? "2-4-months"];
   const extraLanguages = Math.max(0, new Set(input.languages ?? ["en"]).size - 1);
@@ -105,7 +106,7 @@ export function estimateProject(input: EstimateInput): Estimate {
   // multilingual feature is already selected it covers the first extra language.
   const billableLanguages = features.some((f) => f.key === "multilingual") ? extraLanguages - 1 : extraLanguages;
   if (billableLanguages > 0) {
-    const perLanguage = FEATURE_MAP.multilingual.price * scale.priceMultiplier;
+    const perLanguage = featureMap.multilingual.price * scale.priceMultiplier;
     lines.push({
       key: "extra-languages",
       label: `Localisation (+${billableLanguages} language${billableLanguages > 1 ? "s" : ""})`,

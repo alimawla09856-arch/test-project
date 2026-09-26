@@ -6,6 +6,7 @@ import { ApiError } from "@/lib/http";
 import { createLeadReference } from "@/lib/ids";
 import { sendToN8n, type DeliveryResult, type N8nTarget, type OutboundEventType } from "@/lib/n8n";
 import { estimateProject } from "@/lib/pricing/estimate";
+import { sanitizeOverrides } from "@/lib/pricing/overrides";
 import { buildProposalDraft, isProposalExpired, isShareable } from "@/lib/proposals";
 import { publishEvent } from "@/lib/realtime/bus";
 import type { ScopeAnalysis } from "@/lib/schemas/analysis";
@@ -100,13 +101,17 @@ export async function createLeadFromSubmission(
 ): Promise<Lead> {
   const repo = getRepository();
   const { project, plan, contact, meta } = submission;
-  const estimate = estimateProject({
-    services: project.services,
-    features: project.features,
-    scale: project.scale,
-    timeline: plan.timeline,
-    languages: project.languages,
-  });
+  const overrides = sanitizeOverrides(await repo.getPricingOverrides());
+  const estimate = estimateProject(
+    {
+      services: project.services,
+      features: project.features,
+      scale: project.scale,
+      timeline: plan.timeline,
+      languages: project.languages,
+    },
+    overrides,
+  );
   const { consent, marketingOptIn, ...contactFields } = contact;
 
   let lead: Lead | null = null;

@@ -2,6 +2,7 @@ import "server-only";
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { uuid } from "@/lib/ids";
+import type { PricingOverrides } from "@/lib/pricing/overrides";
 import type { NewProposal } from "@/lib/proposals";
 import type { AnalysisRecord, Lead, LeadEvent, LeadSummary, Proposal, ProposalStatus } from "@/lib/types";
 import {
@@ -34,6 +35,7 @@ interface LocalData {
   proposals: Proposal[];
   events: LeadEvent[];
   idempotency: Record<string, { scope: string; response: unknown; done: boolean; createdAt: string }>;
+  pricingOverrides: PricingOverrides | null;
 }
 
 const MAX_EVENTS = 5000;
@@ -41,7 +43,7 @@ const clone = <T>(value: T): T => structuredClone(value);
 const now = () => new Date().toISOString();
 
 function emptyData(): LocalData {
-  return { version: 1, seq: { event: 0 }, leads: [], analyses: [], proposals: [], events: [], idempotency: {} };
+  return { version: 1, seq: { event: 0 }, leads: [], analyses: [], proposals: [], events: [], idempotency: {}, pricingOverrides: null };
 }
 
 export class LocalRepository implements Repository {
@@ -291,6 +293,17 @@ export class LocalRepository implements Repository {
 
   async releaseIdempotencyKey(key: string) {
     delete this.data.idempotency[key];
+    this.persist();
+  }
+
+  /* --------------------------- pricing overrides -------------------------- */
+
+  async getPricingOverrides() {
+    return this.data.pricingOverrides ? clone(this.data.pricingOverrides) : null;
+  }
+
+  async savePricingOverrides(overrides: PricingOverrides) {
+    this.data.pricingOverrides = clone(overrides);
     this.persist();
   }
 }
