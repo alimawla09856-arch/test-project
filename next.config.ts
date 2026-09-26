@@ -12,7 +12,9 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   {
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=(), browsing-topics=()",
+    // microphone=(self) allows the Project Builder's voice notes (this app and its
+    // own /embed iframe); camera/geolocation stay disallowed — nothing here uses them.
+    value: "camera=(), microphone=(self), geolocation=(), browsing-topics=()",
   },
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
 ];

@@ -1,4 +1,4 @@
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, LayoutDashboard } from "lucide-react";
 import { brand } from "@/config/brand";
 import { Logo } from "@/components/ui/Logo";
 import { WhatsAppButton } from "./WhatsAppButton";
@@ -34,6 +34,14 @@ export function SiteFooter() {
         <p className="max-w-md leading-relaxed">
           تُستخدم تفاصيل مشروعك فقط لإعداد عرضك ومناقشته. لديك سؤال؟ <a className="text-mist underline-offset-4 hover:text-ivory hover:underline" href={`mailto:${brand.contactEmail}`}>{brand.contactEmail}</a>
         </p>
+      </div>
+      <div className="mt-6 flex justify-center sm:justify-start">
+        <a
+          href="/admin"
+          className="inline-flex items-center gap-1.5 text-[11.5px] text-fog/70 transition hover:text-mist"
+        >
+          <LayoutDashboard className="size-3" /> دخول لوحة التحكم
+        </a>
       </div>
     </footer>
   );

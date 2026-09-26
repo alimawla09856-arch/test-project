@@ -53,7 +53,7 @@
     iframe.src = builderUrl();
     iframe.title = "Project builder";
     iframe.loading = "lazy";
-    iframe.allow = "clipboard-write";
+    iframe.allow = "clipboard-write; microphone";
     iframe.setAttribute("allowtransparency", "true");
     iframe.style.cssText =
       "display:block;width:100%;border:0;background:transparent;color-scheme:dark;min-height:" +
