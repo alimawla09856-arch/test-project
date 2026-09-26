@@ -9,6 +9,7 @@ import { estimateProject } from "@/lib/pricing/estimate";
 import { sanitizeOverrides } from "@/lib/pricing/overrides";
 import { buildProposalDraft, isProposalExpired, isShareable } from "@/lib/proposals";
 import { publishEvent } from "@/lib/realtime/bus";
+import { resolveSettings } from "@/lib/settings";
 import type { ScopeAnalysis } from "@/lib/schemas/analysis";
 import type { LeadSubmission } from "@/lib/schemas/lead";
 import type {
@@ -250,7 +251,8 @@ export async function runAppAnalysis(
     actor: "system",
   });
   // In n8n-runner mode the analysis workflow sends the "draft ready" alert itself.
-  await deliver("dispatch", "proposal.created", result.lead, result.proposal);
+  // Skipped when auto-send already dispatched the proposal — it's sent, not "ready for review".
+  if (!result.autoSent) await deliver("dispatch", "proposal.created", result.lead, result.proposal);
   return result;
 }
 
@@ -274,7 +276,9 @@ export async function applyAnalysisResult(params: {
   actor: string;
   /** Set to false to skip the CRM webhook (demo data). */
   syncCrm?: boolean;
-}): Promise<{ analysis: AnalysisRecord; proposal: Proposal; lead: Lead }> {
+  /** Set to false to force manual review regardless of the auto-send setting (demo data). */
+  autoSend?: boolean;
+}): Promise<{ analysis: AnalysisRecord; proposal: Proposal; lead: Lead; autoSent: boolean }> {
   const repo = getRepository();
   const { lead } = params;
 
@@ -330,7 +334,18 @@ export async function applyAnalysisResult(params: {
   }
 
   if (params.syncCrm !== false) await syncCrm(updated, "proposal.created", proposal);
-  return { analysis, proposal, lead: updated };
+
+  const settings = resolveSettings(await repo.getAppSettings());
+  if (params.autoSend !== false && settings.autoSend) {
+    try {
+      const approval = await approveProposal(proposal.id, "system:auto-send");
+      return { analysis, proposal: approval.proposal, lead: approval.lead, autoSent: true };
+    } catch (error) {
+      // Leave the proposal in "review" — an admin can approve it manually.
+      console.error(`[pipeline] auto-send failed for proposal ${proposal.id}; leaving it for manual review`, error);
+    }
+  }
+  return { analysis, proposal, lead: updated, autoSent: false };
 }
 
 /* ----------------------------------------------------------------------------

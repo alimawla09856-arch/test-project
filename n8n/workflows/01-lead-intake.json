@@ -11,7 +11,7 @@
         -260
       ],
       "parameters": {
-        "content": "## 01 · Lead Intake & Alerts\n**Trigger:** the app POSTs `lead.created` here right after a brief is submitted.\n\n1. Replies 202 immediately (the app never waits on n8n)\n2. Formats the lead and alerts the team on **Telegram** (and optionally **WhatsApp**)\n3. Emails the client an acknowledgement with their reference\n4. Reports each notification back to `/api/v1/events` (shown in the dashboard activity feed)\n\nAI analysis is requested separately by the app (workflow 02).\n\n**Setup:** edit the ⚙️ Config node · credentials: *ASD · Webhook auth*, *ASD · App API*, *ASD · Telegram bot*, *ASD · SMTP*, *ASD · WhatsApp Cloud API token* (optional).",
+        "content": "## 01 · Lead Intake & Alerts\n**Trigger:** the app POSTs `lead.created` here right after a brief is submitted.\n\n1. Replies 202 immediately (the app never waits on n8n)\n2. Formats the lead and alerts the team on **Telegram** (and optionally **WhatsApp**), plus an **admin email** (`adminEmail` in Config)\n3. Emails the client an acknowledgement with their reference\n4. Reports each notification back to `/api/v1/events` (shown in the dashboard activity feed)\n\nAI analysis is requested separately by the app (workflow 02).\n\n**Setup:** edit the ⚙️ Config node · credentials: *ASD · Webhook auth*, *ASD · App API*, *ASD · Telegram bot*, *ASD · SMTP*, *ASD · WhatsApp Cloud API token* (optional).",
         "width": 420,
         "height": 400,
         "color": 6
@@ -99,6 +99,12 @@
               "id": "9b6957ab-9bf5-5249-a6c9-2dc4543a7277",
               "name": "adminWhatsappNumber",
               "value": "9617XXXXXXX",
+              "type": "string"
+            },
+            {
+              "id": "f8cc8c21-b753-5a59-acd6-3cf48489a273",
+              "name": "adminEmail",
+              "value": "REPLACE_WITH_ADMIN_EMAIL",
               "type": "string"
             },
             {
@@ -233,6 +239,81 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ type: 'notification.sent', leadId: $('Format Lead').first().json.lead.id, data: { channel: 'telegram', kind: 'new_lead', delivered: !$json.error, error: $json.error ? String($json.error.message || $json.error) : undefined } }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "45c2e32a41e157",
+          "name": "ASD · App API (n8n → app)"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "6886117a-3287-5226-a904-efe41aa2bfdf",
+      "name": "Compose Admin Lead Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        -260
+      ],
+      "parameters": {
+        "jsCode": "function esc(value) {\n  return String(value === null || value === undefined ? \"\" : value)\n    .replace(/&/g, \"&amp;\").replace(/</g, \"&lt;\").replace(/>/g, \"&gt;\").replace(/\"/g, \"&quot;\");\n}\nfunction money(value, currency) {\n  try { return new Intl.NumberFormat(\"en-US\", { style: \"currency\", currency: currency || \"USD\", maximumFractionDigits: 0 }).format(value || 0); }\n  catch (e) { return (currency || \"USD\") + \" \" + Math.round(value || 0); }\n}\nvar BRAND = {\"name\":\"AS Design Studio\",\"monogram\":\"AS\",\"ember\":\"#d36707\",\"ink\":\"#07070b\",\"email\":\"alimawla096@gmail.com\",\"site\":\"https://asdesignlb.com\"};\nfunction emailLayout(opts) {\n  var cta = opts.ctaUrl ? '<tr><td style=\"padding:8px 40px 32px\"><a href=\"' + esc(opts.ctaUrl) + '\" style=\"display:inline-block;background:' + BRAND.ember + ';color:#06060a;text-decoration:none;font-weight:600;padding:14px 26px;border-radius:999px;font-size:15px\">' + esc(opts.ctaLabel || \"Open\") + '</a></td></tr>' : \"\";\n  return '<!doctype html><html><body style=\"margin:0;background:#efece6;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;color:#1c1b19\">' +\n    '<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"padding:32px 12px\"><tr><td align=\"center\">' +\n    '<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:600px;width:100%;background:#fbfaf7;border-radius:20px;overflow:hidden\">' +\n    '<tr><td style=\"background:' + BRAND.ink + ';padding:28px 40px;color:#f4f1ea\"><span style=\"display:inline-block;width:34px;height:34px;line-height:34px;text-align:center;border:1px solid #3a3a46;border-radius:50%;font-family:Georgia,serif\">' + esc(BRAND.monogram) + '</span>' +\n    '<span style=\"margin-left:12px;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#b3aea7\">' + esc(BRAND.name) + '</span>' +\n    '<h1 style=\"margin:28px 0 0;font-family:Georgia,serif;font-weight:400;font-size:30px;line-height:1.2;color:#f4f1ea\">' + esc(opts.title) + '</h1></td></tr>' +\n    '<tr><td style=\"padding:32px 40px 8px;font-size:15px;line-height:1.7;color:#2c2a27\">' + opts.bodyHtml + '</td></tr>' + cta +\n    '<tr><td style=\"padding:20px 40px 32px;border-top:1px solid #e7e2d9;font-size:12px;color:#6f6a63\">' + esc(BRAND.name) + ' · <a href=\"mailto:' + esc(BRAND.email) + '\" style=\"color:#6f6a63\">' + esc(BRAND.email) + '</a></td></tr>' +\n    '</table></td></tr></table></body></html>';\n}\nconst lead = $('Format Lead').first().json.lead;\nconst d = lead.display;\nconst html = emailLayout({\n  title: \"New lead · \" + lead.reference,\n  bodyHtml: \"<p><b>\" + esc(d.name) + \"</b>\" + (d.company ? \" · \" + esc(d.company) : \"\") + \"</p>\" +\n    \"<p>🧩 \" + esc(d.services) + \"<br/>💰 Budget \" + esc(d.budget) + \" · indicative \" + esc(d.estimate) + \"<br/>🗓 \" + esc(d.timeline) + \"</p>\" +\n    \"<p>📨 \" + esc(lead.contact.email) + (lead.contact.phone ? \" · \" + esc(lead.contact.phone) : \"\") + \" · prefers \" + esc(d.preferredContact) + \"</p>\" +\n    \"<p><i>\" + esc(String(lead.project.description).slice(0, 400)) + (lead.project.description.length > 400 ? \"…\" : \"\") + \"</i></p>\",\n  ctaUrl: $('Format Lead').first().json.links.admin,\n  ctaLabel: \"Open in dashboard\",\n});\nreturn [{ json: { to: $('Config').first().json.adminEmail, subject: \"New lead · \" + lead.reference + \" · \" + d.name, html } }];"
+      }
+    },
+    {
+      "id": "71ca855b-63c6-5c83-a52a-9206ab68e9f7",
+      "name": "Send Admin Lead Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1320,
+        -260
+      ],
+      "parameters": {
+        "fromEmail": "={{ $('Config').first().json.fromName + ' <' + $('Config').first().json.fromEmail + '>' }}",
+        "toEmail": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailFormat": "html",
+        "html": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false,
+          "replyTo": "={{ $('Config').first().json.replyTo }}"
+        }
+      },
+      "credentials": {
+        "smtp": {
+          "id": "f05ced84d43e5b",
+          "name": "ASD · SMTP"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "12fcd291-59a3-5d28-abd5-0502ea62fe74",
+      "name": "Log Admin Lead Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        -260
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json.appBaseUrl }}/api/v1/events",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ type: 'email.sent', leadId: $('Format Lead').first().json.lead.id, data: { kind: 'admin_new_lead', to: $('Compose Admin Lead Email').first().json.to } }) }}",
         "options": {
           "timeout": 15000
         }
@@ -632,6 +713,11 @@
             "index": 0
           },
           {
+            "node": "Compose Admin Lead Email",
+            "type": "main",
+            "index": 0
+          },
+          {
             "node": "WhatsApp enabled?",
             "type": "main",
             "index": 0
@@ -649,6 +735,28 @@
         [
           {
             "node": "Log Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compose Admin Lead Email": {
+      "main": [
+        [
+          {
+            "node": "Send Admin Lead Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Admin Lead Email": {
+      "main": [
+        [
+          {
+            "node": "Log Admin Lead Email",
             "type": "main",
             "index": 0
           }

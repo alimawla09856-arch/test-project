@@ -3,6 +3,7 @@ import { getRepository } from "@/lib/db";
 import { getConfig } from "@/lib/env";
 import { ApiError, route } from "@/lib/http";
 import { proposalPdfFilename, renderProposalPdf } from "@/lib/pdf/render";
+import { withArabicTranslation } from "@/lib/pdf/translation";
 
 /**
  * GET /api/v1/proposals/:id/pdf — render the proposal PDF (admin or n8n).
@@ -13,12 +14,18 @@ export const GET = route<RouteContext<"/api/v1/proposals/[id]/pdf">>(async (requ
   await authorize(request, ["admin", "n8n"]);
   const { id } = await context.params;
   const repo = getRepository();
-  const proposal = await repo.getProposal(id);
+  let proposal = await repo.getProposal(id);
   if (!proposal) throw new ApiError(404, "not_found", "Proposal not found");
   const lead = await repo.getLead(proposal.leadId);
   if (!lead) throw new ApiError(404, "not_found", "Lead not found");
 
-  const pdf = await renderProposalPdf({ proposal, lead, shareUrl: `${getConfig().appUrl}/p/${proposal.shareToken}` });
+  proposal = await withArabicTranslation(proposal);
+  const pdf = await renderProposalPdf({
+    proposal,
+    lead,
+    shareUrl: `${getConfig().appUrl}/p/${proposal.shareToken}`,
+    arabic: proposal.translations?.ar ?? null,
+  });
   const disposition = new URL(request.url).searchParams.get("download") ? "attachment" : "inline";
   return new Response(new Uint8Array(pdf), {
     headers: {

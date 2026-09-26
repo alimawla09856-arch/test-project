@@ -1,6 +1,7 @@
 import type { Estimate } from "@/lib/pricing/estimate";
 import type { PricingOverrides } from "@/lib/pricing/overrides";
 import type { NewProposal } from "@/lib/proposals";
+import type { AppSettings } from "@/lib/settings";
 import type { Contact, Plan, Project } from "@/lib/schemas/lead";
 import type {
   AnalysisRecord,
@@ -115,6 +116,10 @@ export interface Repository {
   /** Admin-editable price overrides (Settings → Pricing). `null` = none set, use `catalog.ts` defaults. */
   getPricingOverrides(): Promise<PricingOverrides | null>;
   savePricingOverrides(overrides: PricingOverrides): Promise<void>;
+
+  /** Admin-editable app settings (Settings → Automation). `null` = none set, use defaults. */
+  getAppSettings(): Promise<Partial<AppSettings> | null>;
+  saveAppSettings(settings: Partial<AppSettings>): Promise<void>;
 }
 
 export class NotFoundError extends Error {

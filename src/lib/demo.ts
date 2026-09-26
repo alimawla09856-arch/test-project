@@ -178,6 +178,7 @@ export async function seedDemoData(): Promise<number> {
       durationMs: 0,
       actor: "system",
       syncCrm: false,
+      autoSend: false,
     });
     if (sample.stage === "review") continue;
 

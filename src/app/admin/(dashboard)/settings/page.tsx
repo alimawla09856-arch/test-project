@@ -1,5 +1,6 @@
 import { CheckCircle2, CircleDashed, TriangleAlert } from "lucide-react";
 import { getConfig } from "@/lib/env";
+import { AutoSendSettings } from "@/components/admin/AutoSendSettings";
 import { PageHeader, Panel } from "@/components/admin/PageHeader";
 import { PricingSettings } from "@/components/admin/PricingSettings";
 import { CopyBlock, SeedDemoButton, TestWebhookButton } from "@/components/admin/SettingsClient";
@@ -93,6 +94,10 @@ export default function SettingsPage() {
             <CopyBlock label="Popup launcher" value={popupSnippet} />
             <p className="text-[12.5px] text-fog">Allowed parent sites are set with EMBED_ALLOWED_ORIGINS (CSP frame-ancestors).</p>
           </div>
+        </Panel>
+
+        <Panel title="Automation">
+          <AutoSendSettings />
         </Panel>
 
         {config.dataStore === "local" || !config.isProduction ? (

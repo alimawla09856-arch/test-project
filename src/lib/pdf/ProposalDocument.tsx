@@ -16,20 +16,26 @@ import {
 import { brand } from "@/config/brand";
 import { formatDate, formatMoney, formatWeeks } from "@/lib/format";
 import { paymentBreakdown, phaseOffsets } from "@/lib/proposals";
-import type { Lead, Proposal } from "@/lib/types";
+import type { Lead, Proposal, ProposalArabicText } from "@/lib/types";
+import type { PdfFonts } from "./render";
 
 const LOGO_PATH = path.join(process.cwd(), "public", brand.logoPath.replace(/^\//, ""));
 
 /**
  * The client-facing proposal PDF (A4). Rendered on the server with
- * @react-pdf/renderer — see `render.ts` for font registration.
+ * @react-pdf/renderer — see `render.tsx` for font registration.
+ *
+ * Bilingual: when `arabic` + `fonts.arabic` are both available, each section
+ * shows its Arabic translation first, then the original English underneath.
+ * Otherwise the PDF renders English-only (no error — see `translate.ts`).
  */
 
 export interface ProposalDocumentProps {
   proposal: Proposal;
   lead: Lead;
   shareUrl: string;
-  fonts: { display: string; sans: string };
+  fonts: PdfFonts;
+  arabic?: ProposalArabicText | null;
 }
 
 /** A4 in PDF points — the cover art must not exceed the page or it spills onto its own page. */
@@ -78,6 +84,15 @@ function createStyles(fonts: ProposalDocumentProps["fonts"]) {
     sectionLabel: { fontSize: 7.5, letterSpacing: 1.8, color: C.ember, textTransform: "uppercase", marginBottom: 6 },
     sectionTitle: { fontFamily: fonts.display, fontSize: 19, marginBottom: 10, color: C.ink },
     paragraph: { fontSize: 10, color: "#2c2a27", marginBottom: 8, lineHeight: 1.6 },
+
+    // Arabic (bilingual sections) — right-aligned, Cairo, shown above the English text.
+    sectionTitleAr: { fontFamily: fonts.arabic ?? fonts.display, fontSize: 15, marginBottom: 8, color: C.ink, textAlign: "right" },
+    paragraphAr: { fontFamily: fonts.arabic ?? fonts.sans, fontSize: 10, color: "#2c2a27", marginBottom: 8, lineHeight: 1.9, textAlign: "right" },
+    rowTitleAr: { fontFamily: fonts.arabic ?? fonts.sans, fontSize: 10, fontWeight: 600, color: C.ink, textAlign: "right", marginBottom: 1 },
+    rowDescriptionAr: { fontFamily: fonts.arabic ?? fonts.sans, fontSize: 8.5, color: C.muted, textAlign: "right", marginBottom: 3 },
+    phaseNameAr: { fontFamily: fonts.arabic ?? fonts.display, fontSize: 12, textAlign: "right" },
+    bulletTextAr: { fontFamily: fonts.arabic ?? fonts.sans, flex: 1, fontSize: 9.5, color: "#2c2a27", textAlign: "right" },
+    arDivider: { borderTopWidth: 1, borderTopColor: C.line, borderStyle: "dashed", marginVertical: 6 },
 
     phaseBlock: { marginBottom: 14 },
     phaseHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", borderBottomWidth: 1, borderBottomColor: C.ink, paddingBottom: 4, marginBottom: 2 },
@@ -141,12 +156,33 @@ function Paragraphs({ text, styles }: { text: string; styles: Styles }) {
   );
 }
 
-export function ProposalDocument({ proposal, lead, shareUrl, fonts }: ProposalDocumentProps) {
+function ArabicParagraphs({ text, styles }: { text: string; styles: Styles }) {
+  return (
+    <>
+      {text
+        .split(/\n{2,}/)
+        .map((p) => p.trim())
+        .filter(Boolean)
+        .map((paragraph, i) => (
+          <Text key={i} style={styles.paragraphAr}>
+            {paragraph}
+          </Text>
+        ))}
+    </>
+  );
+}
+
+export function ProposalDocument({ proposal, lead, shareUrl, fonts, arabic }: ProposalDocumentProps) {
   const styles = createStyles(fonts);
   const money = (value: number) => formatMoney(value, proposal.currency);
   const client = lead.contact.company ?? lead.contact.name;
   const included = proposal.lineItems.filter((item) => item.included);
   const optional = proposal.lineItems.filter((item) => !item.included);
+  // Only render Arabic when both the translation and a shaping-capable font are available.
+  const ar = fonts.arabic ? arabic : null;
+  const arLineItem = (item: (typeof proposal.lineItems)[number]) =>
+    ar ? ar.lineItems[proposal.lineItems.indexOf(item)] : null;
+  const arPhase = (phase: (typeof proposal.phases)[number]) => (ar ? ar.phases[proposal.phases.indexOf(phase)] : null);
   const totalWeeks = Math.max(proposal.totals.totalWeeks, 0.5);
   const schedule = paymentBreakdown(proposal.totals.total, proposal.paymentSchedule);
   const gantt = phaseOffsets(proposal.phases);
@@ -218,11 +254,25 @@ export function ProposalDocument({ proposal, lead, shareUrl, fonts }: ProposalDo
         {chrome}
 
         <Section index={nextSection()} label="Executive summary" title={`Hello ${client},`} styles={styles}>
+          {ar ? (
+            <>
+              <Text style={styles.sectionTitleAr}>{`مرحباً ${client}،`}</Text>
+              <ArabicParagraphs text={ar.executiveSummary} styles={styles} />
+              <View style={styles.arDivider} />
+            </>
+          ) : null}
           <Paragraphs text={proposal.executiveSummary} styles={styles} />
         </Section>
 
         {proposal.approach ? (
           <Section index={nextSection()} label="Our approach" title="How we'll work together" styles={styles}>
+            {ar ? (
+              <>
+                <Text style={styles.sectionTitleAr}>كيف سنعمل معاً</Text>
+                <ArabicParagraphs text={ar.approach} styles={styles} />
+                <View style={styles.arDivider} />
+              </>
+            ) : null}
             <Paragraphs text={proposal.approach} styles={styles} />
           </Section>
         ) : null}
@@ -231,49 +281,78 @@ export function ProposalDocument({ proposal, lead, shareUrl, fonts }: ProposalDo
           {proposal.phases.map((phase) => {
             const items = included.filter((item) => item.phase === phase.name);
             if (!items.length) return null;
+            const phaseAr = arPhase(phase);
             return (
               <View key={phase.id} style={styles.phaseBlock}>
                 <View style={styles.phaseHeader} wrap={false}>
-                  <Text style={styles.phaseName}>{phase.name}</Text>
+                  {phaseAr ? <Text style={styles.phaseNameAr}>{phaseAr.name}</Text> : <Text style={styles.phaseName}>{phase.name}</Text>}
                   <Text style={styles.phaseWeeks}>{formatWeeks(phase.weeks)}</Text>
                 </View>
-                {items.map((item) => (
-                  <View key={item.id} style={styles.row} wrap={false}>
-                    <View style={styles.rowMain}>
-                      <Text style={styles.rowTitle}>{item.title}</Text>
-                      {item.description ? <Text style={styles.rowDescription}>{item.description}</Text> : null}
+                {phaseAr ? <Text style={[styles.phaseName, { marginTop: 2 }]}>{phase.name}</Text> : null}
+                {items.map((item) => {
+                  const itemAr = arLineItem(item);
+                  return (
+                    <View key={item.id} style={styles.row} wrap={false}>
+                      <View style={styles.rowMain}>
+                        {itemAr ? (
+                          <>
+                            <Text style={styles.rowTitleAr}>{itemAr.title}</Text>
+                            {itemAr.description ? <Text style={styles.rowDescriptionAr}>{itemAr.description}</Text> : null}
+                          </>
+                        ) : null}
+                        <Text style={styles.rowTitle}>{item.title}</Text>
+                        {item.description ? <Text style={styles.rowDescription}>{item.description}</Text> : null}
+                      </View>
+                      <Text style={styles.rowPrice}>{item.billing === "monthly" ? `${money(item.price)}/mo` : money(item.price)}</Text>
                     </View>
-                    <Text style={styles.rowPrice}>{item.billing === "monthly" ? `${money(item.price)}/mo` : money(item.price)}</Text>
-                  </View>
-                ))}
+                  );
+                })}
               </View>
             );
           })}
-          {included.filter((item) => !proposal.phases.some((p) => p.name === item.phase)).map((item) => (
-            <View key={item.id} style={styles.row} wrap={false}>
-              <View style={styles.rowMain}>
-                <Text style={styles.rowTitle}>{item.title}</Text>
-                {item.description ? <Text style={styles.rowDescription}>{item.description}</Text> : null}
+          {included.filter((item) => !proposal.phases.some((p) => p.name === item.phase)).map((item) => {
+            const itemAr = arLineItem(item);
+            return (
+              <View key={item.id} style={styles.row} wrap={false}>
+                <View style={styles.rowMain}>
+                  {itemAr ? (
+                    <>
+                      <Text style={styles.rowTitleAr}>{itemAr.title}</Text>
+                      {itemAr.description ? <Text style={styles.rowDescriptionAr}>{itemAr.description}</Text> : null}
+                    </>
+                  ) : null}
+                  <Text style={styles.rowTitle}>{item.title}</Text>
+                  {item.description ? <Text style={styles.rowDescription}>{item.description}</Text> : null}
+                </View>
+                <Text style={styles.rowPrice}>{item.billing === "monthly" ? `${money(item.price)}/mo` : money(item.price)}</Text>
               </View>
-              <Text style={styles.rowPrice}>{item.billing === "monthly" ? `${money(item.price)}/mo` : money(item.price)}</Text>
-            </View>
-          ))}
+            );
+          })}
           {optional.length ? (
             <View style={{ marginTop: 10 }}>
               <View style={styles.phaseHeader} wrap={false}>
                 <Text style={styles.phaseName}>Optional add-ons</Text>
                 <Text style={styles.phaseWeeks}>Not included in total</Text>
               </View>
-              {optional.map((item) => (
-                <View key={item.id} style={styles.row} wrap={false}>
-                  <View style={styles.rowMain}>
-                    <Text style={styles.rowTitle}>{item.title}</Text>
-                    {item.description ? <Text style={styles.rowDescription}>{item.description}</Text> : null}
-                    <Text style={styles.tag}>Optional</Text>
+              {optional.map((item) => {
+                const itemAr = arLineItem(item);
+                return (
+                  <View key={item.id} style={styles.row} wrap={false}>
+                    <View style={styles.rowMain}>
+                      {itemAr ? (
+                        <>
+                          <Text style={styles.rowTitleAr}>{itemAr.title}</Text>
+                          {itemAr.description ? <Text style={styles.rowDescriptionAr}>{itemAr.description}</Text> : null}
+                        </>
+                      ) : null}
+                      <Text style={styles.rowTitle}>{item.title}</Text>
+                      {item.description ? <Text style={styles.rowDescription}>{item.description}</Text> : null}
+                      <Text style={styles.tag}>Optional</Text>
+                    </View>
+                    <Text style={styles.rowPrice}>{item.billing === "monthly" ? `${money(item.price)}/mo` : money(item.price)}</Text>
                   </View>
-                  <Text style={styles.rowPrice}>{item.billing === "monthly" ? `${money(item.price)}/mo` : money(item.price)}</Text>
-                </View>
-              ))}
+                );
+              })}
             </View>
           ) : null}
         </Section>
@@ -295,18 +374,31 @@ export function ProposalDocument({ proposal, lead, shareUrl, fonts }: ProposalDo
               </View>
             ))}
           </View>
-          {proposal.phases.map((phase) =>
-            phase.summary ? (
-              <View key={phase.id} style={styles.bullet} wrap={false}>
-                <Text style={styles.bulletMark}>—</Text>
-                <Text style={styles.bulletText}>
-                  <Text style={{ fontWeight: 600 }}>{`${phase.name}. `}</Text>
-                  {phase.summary}
-                  {phase.milestones.length ? ` Milestones: ${phase.milestones.join(", ")}.` : ""}
-                </Text>
+          {proposal.phases.map((phase) => {
+            if (!phase.summary) return null;
+            const phaseAr = arPhase(phase);
+            return (
+              <View key={phase.id} wrap={false}>
+                {phaseAr ? (
+                  <View style={styles.bullet}>
+                    <Text style={styles.bulletMark}>—</Text>
+                    <Text style={styles.bulletTextAr}>
+                      <Text style={{ fontWeight: 600 }}>{`${phaseAr.name}. `}</Text>
+                      {phaseAr.summary}
+                    </Text>
+                  </View>
+                ) : null}
+                <View style={styles.bullet}>
+                  <Text style={styles.bulletMark}>—</Text>
+                  <Text style={styles.bulletText}>
+                    <Text style={{ fontWeight: 600 }}>{`${phase.name}. `}</Text>
+                    {phase.summary}
+                    {phase.milestones.length ? ` Milestones: ${phase.milestones.join(", ")}.` : ""}
+                  </Text>
+                </View>
               </View>
-            ) : null,
-          )}
+            );
+          })}
         </Section>
 
         <Section index={nextSection()} label="Investment" title="Your investment" styles={styles}>
@@ -357,6 +449,19 @@ export function ProposalDocument({ proposal, lead, shareUrl, fonts }: ProposalDo
         ) : null}
 
         <Section index={nextSection()} label="Next steps" title="Let's get started" styles={styles}>
+          {ar ? (
+            <>
+              <Text style={styles.sectionTitleAr}>لنبدأ</Text>
+              {ar.nextSteps.map((step, i) => (
+                <View key={i} style={styles.bullet} wrap={false}>
+                  <Text style={styles.bulletMark}>{`${i + 1}.`}</Text>
+                  <Text style={styles.bulletTextAr}>{step}</Text>
+                </View>
+              ))}
+              {ar.notes ? <ArabicParagraphs text={ar.notes} styles={styles} /> : null}
+              <View style={styles.arDivider} />
+            </>
+          ) : null}
           {proposal.nextSteps.map((step, i) => (
             <View key={i} style={styles.bullet} wrap={false}>
               <Text style={styles.bulletMark}>{`${i + 1}.`}</Text>

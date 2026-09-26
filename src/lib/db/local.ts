@@ -4,6 +4,7 @@ import path from "node:path";
 import { uuid } from "@/lib/ids";
 import type { PricingOverrides } from "@/lib/pricing/overrides";
 import type { NewProposal } from "@/lib/proposals";
+import type { AppSettings } from "@/lib/settings";
 import type { AnalysisRecord, Lead, LeadEvent, LeadSummary, Proposal, ProposalStatus } from "@/lib/types";
 import {
   NotFoundError,
@@ -36,6 +37,7 @@ interface LocalData {
   events: LeadEvent[];
   idempotency: Record<string, { scope: string; response: unknown; done: boolean; createdAt: string }>;
   pricingOverrides: PricingOverrides | null;
+  appSettings: Partial<AppSettings> | null;
 }
 
 const MAX_EVENTS = 5000;
@@ -43,7 +45,7 @@ const clone = <T>(value: T): T => structuredClone(value);
 const now = () => new Date().toISOString();
 
 function emptyData(): LocalData {
-  return { version: 1, seq: { event: 0 }, leads: [], analyses: [], proposals: [], events: [], idempotency: {}, pricingOverrides: null };
+  return { version: 1, seq: { event: 0 }, leads: [], analyses: [], proposals: [], events: [], idempotency: {}, pricingOverrides: null, appSettings: null };
 }
 
 export class LocalRepository implements Repository {
@@ -304,6 +306,17 @@ export class LocalRepository implements Repository {
 
   async savePricingOverrides(overrides: PricingOverrides) {
     this.data.pricingOverrides = clone(overrides);
+    this.persist();
+  }
+
+  /* ----------------------------- app settings ------------------------------ */
+
+  async getAppSettings() {
+    return this.data.appSettings ? clone(this.data.appSettings) : null;
+  }
+
+  async saveAppSettings(settings: Partial<AppSettings>) {
+    this.data.appSettings = clone(settings);
     this.persist();
   }
 }

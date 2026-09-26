@@ -2,6 +2,7 @@ import "server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { PricingOverrides } from "@/lib/pricing/overrides";
 import type { NewProposal } from "@/lib/proposals";
+import type { AppSettings } from "@/lib/settings";
 import type { AnalysisRecord, Lead, LeadEvent, LeadSummary, Proposal, ProposalStatus } from "@/lib/types";
 import {
   NotFoundError,
@@ -97,6 +98,7 @@ function toProposal(row: Row): Proposal {
     viewedAt: row.viewed_at,
     respondedAt: row.responded_at,
     clientResponse: row.client_response,
+    translations: row.translations ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -128,6 +130,7 @@ function proposalToRow(input: ProposalUpdate): Row {
     viewedAt: "viewed_at",
     respondedAt: "responded_at",
     clientResponse: "client_response",
+    translations: "translations",
   };
   const row: Row = {};
   for (const [key, value] of Object.entries(input)) {
@@ -483,6 +486,20 @@ export class SupabaseRepository implements Repository {
     check(
       await this.db.from("pricing_overrides").upsert({ id: 1, data: overrides, updated_at: new Date().toISOString() }),
       "savePricingOverrides",
+    );
+  }
+
+  /* ----------------------------- app settings ------------------------------ */
+
+  async getAppSettings(): Promise<Partial<AppSettings> | null> {
+    const row = check(await this.db.from("app_settings").select("data").eq("id", 1).maybeSingle(), "getAppSettings");
+    return row?.data ?? null;
+  }
+
+  async saveAppSettings(settings: Partial<AppSettings>): Promise<void> {
+    check(
+      await this.db.from("app_settings").upsert({ id: 1, data: settings, updated_at: new Date().toISOString() }),
+      "saveAppSettings",
     );
   }
 }

@@ -11,7 +11,7 @@
         -320
       ],
       "parameters": {
-        "content": "## 04 · Client Dispatch & Admin Alerts\n**Trigger:** the app POSTs proposal events here.\n\n- `proposal.approved` → PDF from workflow 03 → delivered to the client by **email and/or WhatsApp**, per `lead.contact.deliveryChannel` (`email` | `whatsapp` | `both`) → `proposal.sent` reported to the app per channel → Telegram / WhatsApp alert to the team\n- `proposal.accepted` → 🎉 alert + **welcome email** with kickoff link\n- `proposal.declined` → alert with the client's note\n- `proposal.created` → *draft ready for review* alert (only sent when the app runs the AI itself)\n\n**Client WhatsApp delivery** requires an approved Meta message **template** (Cloud API can't send free-form text to a client who hasn't messaged you in the last 24h). Create one in Meta Business Manager with a body of the form \"Hi {{1}}, your proposal is ready — {{2}}. Review and accept: {{3}}\" and set its name in `whatsappClientTemplateName` below.\n\n**Credentials:** *ASD · Webhook auth* (also used to call workflow 03), *ASD · App API*, *ASD · SMTP*, *ASD · Telegram bot*, *ASD · WhatsApp Cloud API token*.",
+        "content": "## 04 · Client Dispatch & Admin Alerts\n**Trigger:** the app POSTs proposal events here.\n\n- `proposal.approved` → PDF from workflow 03 → delivered to the client by **email and/or WhatsApp**, per `lead.contact.deliveryChannel` (`email` | `whatsapp` | `both`) → `proposal.sent` reported to the app per channel → Telegram / WhatsApp / **admin email** alert to the team (`adminEmail` in Config)\n- `proposal.accepted` → 🎉 alert (Telegram + admin email) + **welcome email** with kickoff link\n- `proposal.declined` → alert (Telegram + admin email) with the client's note\n- `proposal.created` → *draft ready for review* alert (only sent when the app runs the AI itself)\n\n**Client WhatsApp delivery** requires an approved Meta message **template** (Cloud API can't send free-form text to a client who hasn't messaged you in the last 24h). Create one in Meta Business Manager with a body of the form \"Hi {{1}}, your proposal is ready — {{2}}. Review and accept: {{3}}\" and set its name in `whatsappClientTemplateName` below.\n\n**Credentials:** *ASD · Webhook auth* (also used to call workflow 03), *ASD · App API*, *ASD · SMTP*, *ASD · Telegram bot*, *ASD · WhatsApp Cloud API token*.",
         "width": 460,
         "height": 440,
         "color": 6
@@ -105,6 +105,12 @@
               "id": "4409be09-7abb-53d6-a81a-b74167e54e75",
               "name": "adminWhatsappNumber",
               "value": "9617XXXXXXX",
+              "type": "string"
+            },
+            {
+              "id": "4414a365-20c0-589f-a423-7cf7ebde3d44",
+              "name": "adminEmail",
+              "value": "REPLACE_WITH_ADMIN_EMAIL",
               "type": "string"
             },
             {
@@ -415,6 +421,49 @@
       "onError": "continueRegularOutput"
     },
     {
+      "id": "f66e35f1-d502-5677-afa0-e0aa286abe5d",
+      "name": "Compose Admin Email · Sent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1340,
+        -480
+      ],
+      "parameters": {
+        "jsCode": "function esc(value) {\n  return String(value === null || value === undefined ? \"\" : value)\n    .replace(/&/g, \"&amp;\").replace(/</g, \"&lt;\").replace(/>/g, \"&gt;\").replace(/\"/g, \"&quot;\");\n}\nfunction money(value, currency) {\n  try { return new Intl.NumberFormat(\"en-US\", { style: \"currency\", currency: currency || \"USD\", maximumFractionDigits: 0 }).format(value || 0); }\n  catch (e) { return (currency || \"USD\") + \" \" + Math.round(value || 0); }\n}\nvar BRAND = {\"name\":\"AS Design Studio\",\"monogram\":\"AS\",\"ember\":\"#d36707\",\"ink\":\"#07070b\",\"email\":\"alimawla096@gmail.com\",\"site\":\"https://asdesignlb.com\"};\nfunction emailLayout(opts) {\n  var cta = opts.ctaUrl ? '<tr><td style=\"padding:8px 40px 32px\"><a href=\"' + esc(opts.ctaUrl) + '\" style=\"display:inline-block;background:' + BRAND.ember + ';color:#06060a;text-decoration:none;font-weight:600;padding:14px 26px;border-radius:999px;font-size:15px\">' + esc(opts.ctaLabel || \"Open\") + '</a></td></tr>' : \"\";\n  return '<!doctype html><html><body style=\"margin:0;background:#efece6;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;color:#1c1b19\">' +\n    '<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"padding:32px 12px\"><tr><td align=\"center\">' +\n    '<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:600px;width:100%;background:#fbfaf7;border-radius:20px;overflow:hidden\">' +\n    '<tr><td style=\"background:' + BRAND.ink + ';padding:28px 40px;color:#f4f1ea\"><span style=\"display:inline-block;width:34px;height:34px;line-height:34px;text-align:center;border:1px solid #3a3a46;border-radius:50%;font-family:Georgia,serif\">' + esc(BRAND.monogram) + '</span>' +\n    '<span style=\"margin-left:12px;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#b3aea7\">' + esc(BRAND.name) + '</span>' +\n    '<h1 style=\"margin:28px 0 0;font-family:Georgia,serif;font-weight:400;font-size:30px;line-height:1.2;color:#f4f1ea\">' + esc(opts.title) + '</h1></td></tr>' +\n    '<tr><td style=\"padding:32px 40px 8px;font-size:15px;line-height:1.7;color:#2c2a27\">' + opts.bodyHtml + '</td></tr>' + cta +\n    '<tr><td style=\"padding:20px 40px 32px;border-top:1px solid #e7e2d9;font-size:12px;color:#6f6a63\">' + esc(BRAND.name) + ' · <a href=\"mailto:' + esc(BRAND.email) + '\" style=\"color:#6f6a63\">' + esc(BRAND.email) + '</a></td></tr>' +\n    '</table></td></tr></table></body></html>';\n}\nconst body = $('Dispatch Webhook').first().json.body;\nconst html = emailLayout({\n  title: \"Proposal sent · \" + body.lead.reference,\n  bodyHtml: \"<p>\" + esc(body.lead.display.name) + \" — <b>\" + esc(body.proposal.display.total) + \"</b></p>\",\n  ctaUrl: body.links.admin,\n  ctaLabel: \"Open lead\",\n});\nreturn [{ json: { to: $('Config').first().json.adminEmail, subject: \"Proposal sent · \" + body.lead.reference, html } }];"
+      }
+    },
+    {
+      "id": "b8fbbf9c-9faa-5008-a14e-cfb58157122e",
+      "name": "Admin Email · Sent",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1560,
+        -480
+      ],
+      "parameters": {
+        "fromEmail": "={{ $('Config').first().json.fromName + ' <' + $('Config').first().json.fromEmail + '>' }}",
+        "toEmail": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailFormat": "html",
+        "html": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false,
+          "replyTo": "={{ $('Config').first().json.replyTo }}"
+        }
+      },
+      "credentials": {
+        "smtp": {
+          "id": "f05ced84d43e5b",
+          "name": "ASD · SMTP"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
       "id": "c28e4003-bea7-5c1e-ad49-70e634784f76",
       "name": "Client wants email?",
       "type": "n8n-nodes-base.if",
@@ -715,6 +764,49 @@
       "onError": "continueRegularOutput"
     },
     {
+      "id": "1bea711d-e616-54e4-a8ce-14a5e9849473",
+      "name": "Compose Admin Email · Accepted",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        -180
+      ],
+      "parameters": {
+        "jsCode": "function esc(value) {\n  return String(value === null || value === undefined ? \"\" : value)\n    .replace(/&/g, \"&amp;\").replace(/</g, \"&lt;\").replace(/>/g, \"&gt;\").replace(/\"/g, \"&quot;\");\n}\nfunction money(value, currency) {\n  try { return new Intl.NumberFormat(\"en-US\", { style: \"currency\", currency: currency || \"USD\", maximumFractionDigits: 0 }).format(value || 0); }\n  catch (e) { return (currency || \"USD\") + \" \" + Math.round(value || 0); }\n}\nvar BRAND = {\"name\":\"AS Design Studio\",\"monogram\":\"AS\",\"ember\":\"#d36707\",\"ink\":\"#07070b\",\"email\":\"alimawla096@gmail.com\",\"site\":\"https://asdesignlb.com\"};\nfunction emailLayout(opts) {\n  var cta = opts.ctaUrl ? '<tr><td style=\"padding:8px 40px 32px\"><a href=\"' + esc(opts.ctaUrl) + '\" style=\"display:inline-block;background:' + BRAND.ember + ';color:#06060a;text-decoration:none;font-weight:600;padding:14px 26px;border-radius:999px;font-size:15px\">' + esc(opts.ctaLabel || \"Open\") + '</a></td></tr>' : \"\";\n  return '<!doctype html><html><body style=\"margin:0;background:#efece6;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;color:#1c1b19\">' +\n    '<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"padding:32px 12px\"><tr><td align=\"center\">' +\n    '<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:600px;width:100%;background:#fbfaf7;border-radius:20px;overflow:hidden\">' +\n    '<tr><td style=\"background:' + BRAND.ink + ';padding:28px 40px;color:#f4f1ea\"><span style=\"display:inline-block;width:34px;height:34px;line-height:34px;text-align:center;border:1px solid #3a3a46;border-radius:50%;font-family:Georgia,serif\">' + esc(BRAND.monogram) + '</span>' +\n    '<span style=\"margin-left:12px;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#b3aea7\">' + esc(BRAND.name) + '</span>' +\n    '<h1 style=\"margin:28px 0 0;font-family:Georgia,serif;font-weight:400;font-size:30px;line-height:1.2;color:#f4f1ea\">' + esc(opts.title) + '</h1></td></tr>' +\n    '<tr><td style=\"padding:32px 40px 8px;font-size:15px;line-height:1.7;color:#2c2a27\">' + opts.bodyHtml + '</td></tr>' + cta +\n    '<tr><td style=\"padding:20px 40px 32px;border-top:1px solid #e7e2d9;font-size:12px;color:#6f6a63\">' + esc(BRAND.name) + ' · <a href=\"mailto:' + esc(BRAND.email) + '\" style=\"color:#6f6a63\">' + esc(BRAND.email) + '</a></td></tr>' +\n    '</table></td></tr></table></body></html>';\n}\nconst body = $('Dispatch Webhook').first().json.body;\nconst note = body.proposal.clientResponse && body.proposal.clientResponse.note;\nconst html = emailLayout({\n  title: \"🎉 Proposal accepted · \" + body.lead.reference,\n  bodyHtml: \"<p>\" + esc(body.lead.display.name) + \" signed <b>\" + esc(body.proposal.display.total) + \"</b></p>\" + (note ? \"<p><i>“\" + esc(note) + \"”</i></p>\" : \"\"),\n  ctaUrl: body.links.admin,\n  ctaLabel: \"Plan the kickoff\",\n});\nreturn [{ json: { to: $('Config').first().json.adminEmail, subject: \"🎉 Accepted · \" + body.lead.reference, html } }];"
+      }
+    },
+    {
+      "id": "0374fc16-f7d8-59d9-a577-1fe6429d16df",
+      "name": "Admin Email · Accepted",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1340,
+        -180
+      ],
+      "parameters": {
+        "fromEmail": "={{ $('Config').first().json.fromName + ' <' + $('Config').first().json.fromEmail + '>' }}",
+        "toEmail": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailFormat": "html",
+        "html": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false,
+          "replyTo": "={{ $('Config').first().json.replyTo }}"
+        }
+      },
+      "credentials": {
+        "smtp": {
+          "id": "f05ced84d43e5b",
+          "name": "ASD · SMTP"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
       "id": "c5f156b0-7ed6-52e2-a089-84213bafdf28",
       "name": "Compose Welcome Email",
       "type": "n8n-nodes-base.code",
@@ -816,6 +908,49 @@
       "onError": "continueRegularOutput"
     },
     {
+      "id": "041ccb9e-24ee-5c99-a570-f974e8bebb2d",
+      "name": "Compose Admin Email · Declined",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        340
+      ],
+      "parameters": {
+        "jsCode": "function esc(value) {\n  return String(value === null || value === undefined ? \"\" : value)\n    .replace(/&/g, \"&amp;\").replace(/</g, \"&lt;\").replace(/>/g, \"&gt;\").replace(/\"/g, \"&quot;\");\n}\nfunction money(value, currency) {\n  try { return new Intl.NumberFormat(\"en-US\", { style: \"currency\", currency: currency || \"USD\", maximumFractionDigits: 0 }).format(value || 0); }\n  catch (e) { return (currency || \"USD\") + \" \" + Math.round(value || 0); }\n}\nvar BRAND = {\"name\":\"AS Design Studio\",\"monogram\":\"AS\",\"ember\":\"#d36707\",\"ink\":\"#07070b\",\"email\":\"alimawla096@gmail.com\",\"site\":\"https://asdesignlb.com\"};\nfunction emailLayout(opts) {\n  var cta = opts.ctaUrl ? '<tr><td style=\"padding:8px 40px 32px\"><a href=\"' + esc(opts.ctaUrl) + '\" style=\"display:inline-block;background:' + BRAND.ember + ';color:#06060a;text-decoration:none;font-weight:600;padding:14px 26px;border-radius:999px;font-size:15px\">' + esc(opts.ctaLabel || \"Open\") + '</a></td></tr>' : \"\";\n  return '<!doctype html><html><body style=\"margin:0;background:#efece6;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;color:#1c1b19\">' +\n    '<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"padding:32px 12px\"><tr><td align=\"center\">' +\n    '<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:600px;width:100%;background:#fbfaf7;border-radius:20px;overflow:hidden\">' +\n    '<tr><td style=\"background:' + BRAND.ink + ';padding:28px 40px;color:#f4f1ea\"><span style=\"display:inline-block;width:34px;height:34px;line-height:34px;text-align:center;border:1px solid #3a3a46;border-radius:50%;font-family:Georgia,serif\">' + esc(BRAND.monogram) + '</span>' +\n    '<span style=\"margin-left:12px;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#b3aea7\">' + esc(BRAND.name) + '</span>' +\n    '<h1 style=\"margin:28px 0 0;font-family:Georgia,serif;font-weight:400;font-size:30px;line-height:1.2;color:#f4f1ea\">' + esc(opts.title) + '</h1></td></tr>' +\n    '<tr><td style=\"padding:32px 40px 8px;font-size:15px;line-height:1.7;color:#2c2a27\">' + opts.bodyHtml + '</td></tr>' + cta +\n    '<tr><td style=\"padding:20px 40px 32px;border-top:1px solid #e7e2d9;font-size:12px;color:#6f6a63\">' + esc(BRAND.name) + ' · <a href=\"mailto:' + esc(BRAND.email) + '\" style=\"color:#6f6a63\">' + esc(BRAND.email) + '</a></td></tr>' +\n    '</table></td></tr></table></body></html>';\n}\nconst body = $('Dispatch Webhook').first().json.body;\nconst note = body.proposal.clientResponse && body.proposal.clientResponse.note;\nconst html = emailLayout({\n  title: \"Proposal declined · \" + body.lead.reference,\n  bodyHtml: \"<p>\" + esc(body.lead.display.name) + \"</p>\" + (note ? \"<p><i>“\" + esc(note) + \"”</i></p>\" : \"\"),\n  ctaUrl: body.links.admin,\n  ctaLabel: \"Open lead\",\n});\nreturn [{ json: { to: $('Config').first().json.adminEmail, subject: \"Declined · \" + body.lead.reference, html } }];"
+      }
+    },
+    {
+      "id": "73aa83b9-c712-5113-a268-db49d3a570aa",
+      "name": "Admin Email · Declined",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1120,
+        340
+      ],
+      "parameters": {
+        "fromEmail": "={{ $('Config').first().json.fromName + ' <' + $('Config').first().json.fromEmail + '>' }}",
+        "toEmail": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailFormat": "html",
+        "html": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false,
+          "replyTo": "={{ $('Config').first().json.replyTo }}"
+        }
+      },
+      "credentials": {
+        "smtp": {
+          "id": "f05ced84d43e5b",
+          "name": "ASD · SMTP"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
       "id": "fafa7ca5-9a3f-5261-aa3d-4be305710180",
       "name": "Telegram · Draft Ready",
       "type": "n8n-nodes-base.telegram",
@@ -895,11 +1030,21 @@
             "node": "Compose Welcome Email",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Compose Admin Email · Accepted",
+            "type": "main",
+            "index": 0
           }
         ],
         [
           {
             "node": "Telegram · Declined",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Compose Admin Email · Declined",
             "type": "main",
             "index": 0
           }
@@ -945,6 +1090,11 @@
             "index": 0
           },
           {
+            "node": "Compose Admin Email · Sent",
+            "type": "main",
+            "index": 0
+          },
+          {
             "node": "Client wants email?",
             "type": "main",
             "index": 0
@@ -962,6 +1112,17 @@
         [
           {
             "node": "WhatsApp · Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compose Admin Email · Sent": {
+      "main": [
+        [
+          {
+            "node": "Admin Email · Sent",
             "type": "main",
             "index": 0
           }
@@ -1039,6 +1200,28 @@
         [
           {
             "node": "WhatsApp · Accepted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compose Admin Email · Accepted": {
+      "main": [
+        [
+          {
+            "node": "Admin Email · Accepted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compose Admin Email · Declined": {
+      "main": [
+        [
+          {
+            "node": "Admin Email · Declined",
             "type": "main",
             "index": 0
           }

@@ -16,7 +16,7 @@ export function leadIntakeWorkflow() {
       "**Trigger:** the app POSTs `lead.created` here right after a brief is submitted.",
       "",
       "1. Replies 202 immediately (the app never waits on n8n)",
-      "2. Formats the lead and alerts the team on **Telegram** (and optionally **WhatsApp**)",
+      "2. Formats the lead and alerts the team on **Telegram** (and optionally **WhatsApp**), plus an **admin email** (`adminEmail` in Config)",
       "3. Emails the client an acknowledgement with their reference",
       "4. Reports each notification back to `/api/v1/events` (shown in the dashboard activity feed)",
       "",
@@ -35,6 +35,7 @@ export function leadIntakeWorkflow() {
       { name: "whatsappEnabled", value: false },
       { name: "whatsappPhoneNumberId", value: "REPLACE_WITH_META_PHONE_NUMBER_ID" },
       { name: "adminWhatsappNumber", value: "9617XXXXXXX" },
+      { name: "adminEmail", value: "REPLACE_WITH_ADMIN_EMAIL" },
       { name: "sendClientAck", value: true },
       { name: "fromEmail", value: "proposals@asdesignlb.com" },
       { name: "fromName", value: "Ali Mawla · AS Design Studio" },
@@ -77,6 +78,31 @@ return [{ json: { lead, links: body.links, telegramText: lines.join("\n"), whats
   wf.add(telegram("Telegram Alert", [1100, -80], "={{ $json.telegramText }}"));
   wf.add(reportEvent("Log Telegram", [1320, -80], "{ type: 'notification.sent', leadId: $('Format Lead').first().json.lead.id, data: { channel: 'telegram', kind: 'new_lead', delivered: !$json.error, error: $json.error ? String($json.error.message || $json.error) : undefined } }"));
 
+  wf.add(
+    code(
+      "Compose Admin Lead Email",
+      [1100, -260],
+      ESCAPE_JS +
+        "\n" +
+        EMAIL_LAYOUT_JS +
+        String.raw`
+const lead = $('Format Lead').first().json.lead;
+const d = lead.display;
+const html = emailLayout({
+  title: "New lead · " + lead.reference,
+  bodyHtml: "<p><b>" + esc(d.name) + "</b>" + (d.company ? " · " + esc(d.company) : "") + "</p>" +
+    "<p>🧩 " + esc(d.services) + "<br/>💰 Budget " + esc(d.budget) + " · indicative " + esc(d.estimate) + "<br/>🗓 " + esc(d.timeline) + "</p>" +
+    "<p>📨 " + esc(lead.contact.email) + (lead.contact.phone ? " · " + esc(lead.contact.phone) : "") + " · prefers " + esc(d.preferredContact) + "</p>" +
+    "<p><i>" + esc(String(lead.project.description).slice(0, 400)) + (lead.project.description.length > 400 ? "…" : "") + "</i></p>",
+  ctaUrl: $('Format Lead').first().json.links.admin,
+  ctaLabel: "Open in dashboard",
+});
+return [{ json: { to: $('Config').first().json.adminEmail, subject: "New lead · " + lead.reference + " · " + d.name, html } }];`,
+    ),
+  );
+  wf.add(email("Send Admin Lead Email", [1320, -260], { to: "={{ $json.to }}", subject: "={{ $json.subject }}", html: "={{ $json.html }}" }));
+  wf.add(reportEvent("Log Admin Lead Email", [1540, -260], "{ type: 'email.sent', leadId: $('Format Lead').first().json.lead.id, data: { kind: 'admin_new_lead', to: $('Compose Admin Lead Email').first().json.to } }"));
+
   wf.add(ifNode("WhatsApp enabled?", [1100, 100], { left: "={{ $('Config').first().json.whatsappEnabled }}", op: "true" }, NAME));
   wf.add({
     ...http("WhatsApp Alert", [1320, 60], {
@@ -118,9 +144,11 @@ return [{ json: { to: lead.contact.email, subject: "Your project brief · " + le
   wf.connect("Is test ping?", "Test OK", 0);
   wf.connect("Is test ping?", "Format Lead", 1);
   wf.connect("Format Lead", "Telegram Alert");
+  wf.connect("Format Lead", "Compose Admin Lead Email");
   wf.connect("Format Lead", "WhatsApp enabled?");
   wf.connect("Format Lead", "Send client ack?");
   wf.connect("Telegram Alert", "Log Telegram");
+  wf.chain("Compose Admin Lead Email", "Send Admin Lead Email", "Log Admin Lead Email");
   wf.connect("WhatsApp enabled?", "WhatsApp Alert", 0);
   wf.chain("Send client ack?", "Compose Ack Email", "Send Ack Email", "Log Ack Email");
 

@@ -33,8 +33,8 @@ Supabase (Postgres + RLS) · Anthropic SDK · OpenAI SDK · react-pdf · n8n
 | **Project Builder** | `/` | A six-step Framer Motion wizard: services → vision → scope → budget & timeline → contact → review. A **live blueprint** prices the project from the rate card as the client chooses. Drafts are saved to `localStorage`, with a honeypot and minimum-fill-time spam checks. The vision step includes a **voice recorder** (mic capture, live level visualizer) that transcribes with Whisper and drops the text straight into the brief — English and Arabic (Gulf/Lebanese) both work, auto-detected. |
 | **Embeddable builder** | `/embed` + `/widget.js` | Inline or popup embed for asdesignlb.com, with auto-height, UTM forwarding and an `asd:lead-submitted` DOM event. |
 | **Client proposal portal** | `/p/{token}` | A private, branded proposal page: scope by phase, Gantt timeline, investment and payment schedule. The client can download the PDF and **accept or decline online**. Views are tracked. |
-| **Proposal PDF** | `/p/{token}/pdf`, `/api/v1/proposals/{id}/pdf` | An A4 PDF rendered server-side with the brand fonts (Fraunces / Hanken Grotesk). |
-| **Agency dashboard** | `/admin` | KPIs, a "needs attention" queue, a **real-time activity feed** (Server-Sent Events), leads and proposals trackers, and the AI analysis view (fit score, budget fit, risks, discovery questions). A **proposal editor** covers line items, phases, discount, tax and payment schedule, plus **regenerate with instructions** and **approve & send**. A settings page shows integration health and has n8n connection tests. |
+| **Proposal PDF** | `/p/{token}/pdf`, `/api/v1/proposals/{id}/pdf` | An A4 PDF rendered server-side with the brand fonts (Fraunces / Hanken Grotesk). **Bilingual**: each section shows its Arabic translation (Cairo font) above the original English — translated once by Claude and cached on the proposal (`src/lib/ai/translate.ts`). Falls back to English-only if `ANTHROPIC_API_KEY` isn't set. |
+| **Agency dashboard** | `/admin` | KPIs, a "needs attention" queue, a **real-time activity feed** (Server-Sent Events), leads and proposals trackers, and the AI analysis view (fit score, budget fit, risks, discovery questions). A **proposal editor** covers line items, phases, discount, tax and payment schedule, plus **regenerate with instructions** and **approve & send**. Settings shows integration health, n8n connection tests, and an **auto-send** toggle (on by default — see below). |
 | **n8n templates** | `n8n/workflows/*.json` | Five importable workflows: lead intake, AI analysis, PDF, dispatch & alerts, CRM sync. They are generated from the same prompt, rate card and schema as the app. |
 
 Everything is optional. With **no configuration** the app runs end-to-end: a local JSON store, the rule-based estimator instead of AI, and a development admin login.
@@ -79,6 +79,8 @@ To turn on real AI, add `ANTHROPIC_API_KEY` to `.env.local` and restart. New bri
 ```
 
 **The lead state machine:** `new → analyzing → review → approved → sent → won | lost` (and `archived`). Every transition is written to `lead_events`. That table drives the activity feeds and is the cursor for the live stream.
+
+**Auto-send (default: on).** By default a proposal skips the `review` stop and is approved + dispatched to the client the moment it's generated — no strategist click required. Turn this off in **Settings → Automation** to go back to manual "Approve & send" (the diagram above shows the manual path). Demo-seeded leads are never auto-sent, regardless of this setting.
 
 **Who runs the AI?**
 
@@ -172,10 +174,10 @@ Create these credentials in n8n with **exactly these names** before importing, a
 
 | File | Webhook path | Triggered by | What it does |
 |---|---|---|---|
-| `01-lead-intake.json` | `asd-lead-intake` | `lead.created` | Telegram (and optional WhatsApp) alert for the team, and an acknowledgement email to the client. **Second entry point** `asd-external-lead` imports leads from Typeform, Webflow, Meta Lead Ads and similar into `POST /api/v1/onboard`. |
+| `01-lead-intake.json` | `asd-lead-intake` | `lead.created` | Telegram (and optional WhatsApp) alert for the team, an **admin email** (`adminEmail` in Config), and an acknowledgement email to the client. **Second entry point** `asd-external-lead` imports leads from Typeform, Webflow, Meta Lead Ads and similar into `POST /api/v1/onboard`. |
 | `02-ai-scope-analysis.json` | `asd-ai-analysis` | `analysis.requested` | Builds the prompt (rate card, data-minimised brief, JSON schema), then calls **Claude** (default) or **OpenAI**, checks the stop reason and parses the result. Posts to `POST /api/v1/proposals` (idempotent), then sends a "draft ready" alert, or an `analysis.failed` event and a failure alert. |
 | `03-proposal-pdf.json` | `asd-proposal-pdf` | workflow 04 | A PDF microservice. `pdfEngine=app` downloads the app-rendered PDF; `pdfEngine=gotenberg` renders branded HTML with Gotenberg. Can archive to Supabase Storage. |
-| `04-client-dispatch-alerts.json` | `asd-proposal-dispatch` | `proposal.approved/accepted/declined/created` | On **approval**: fetches the PDF (via 03) and delivers it to the client by **email and/or WhatsApp** per their chosen `deliveryChannel` (set in the Contact step), reports `proposal.sent` per channel, and alerts the team. On **acceptance**: 🎉 alert and welcome email. Also sends decline alerts and draft-ready alerts. |
+| `04-client-dispatch-alerts.json` | `asd-proposal-dispatch` | `proposal.approved/accepted/declined/created` | On **approval**: fetches the PDF (via 03) and delivers it to the client by **email and/or WhatsApp** per their chosen `deliveryChannel` (set in the Contact step), reports `proposal.sent` per channel, and alerts the team (Telegram/WhatsApp + **admin email**). On **acceptance**: 🎉 alert (+ admin email) and welcome email. Declines alert the team (+ admin email) too. |
 | `05-crm-sync.json` | `asd-crm-sync` | `crm.sync` (every change) | Upserts one record per lead, keyed on **Reference**, into Airtable, Notion and/or Supabase, and reports the record ids back. |
 
 ### 3. Configure & activate

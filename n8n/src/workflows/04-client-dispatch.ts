@@ -24,9 +24,9 @@ export function clientDispatchWorkflow() {
       "## 04 · Client Dispatch & Admin Alerts",
       "**Trigger:** the app POSTs proposal events here.",
       "",
-      "- `proposal.approved` → PDF from workflow 03 → delivered to the client by **email and/or WhatsApp**, per `lead.contact.deliveryChannel` (`email` | `whatsapp` | `both`) → `proposal.sent` reported to the app per channel → Telegram / WhatsApp alert to the team",
-      "- `proposal.accepted` → 🎉 alert + **welcome email** with kickoff link",
-      "- `proposal.declined` → alert with the client's note",
+      "- `proposal.approved` → PDF from workflow 03 → delivered to the client by **email and/or WhatsApp**, per `lead.contact.deliveryChannel` (`email` | `whatsapp` | `both`) → `proposal.sent` reported to the app per channel → Telegram / WhatsApp / **admin email** alert to the team (`adminEmail` in Config)",
+      "- `proposal.accepted` → 🎉 alert (Telegram + admin email) + **welcome email** with kickoff link",
+      "- `proposal.declined` → alert (Telegram + admin email) with the client's note",
       "- `proposal.created` → *draft ready for review* alert (only sent when the app runs the AI itself)",
       "",
       "**Client WhatsApp delivery** requires an approved Meta message **template** (Cloud API can't send free-form text to a client who hasn't messaged you in the last 24h). Create one in Meta Business Manager with a body of the form \"Hi {{1}}, your proposal is ready — {{2}}. Review and accept: {{3}}\" and set its name in `whatsappClientTemplateName` below.",
@@ -45,6 +45,7 @@ export function clientDispatchWorkflow() {
       { name: "whatsappEnabled", value: false },
       { name: "whatsappPhoneNumberId", value: "REPLACE_WITH_META_PHONE_NUMBER_ID" },
       { name: "adminWhatsappNumber", value: "9617XXXXXXX" },
+      { name: "adminEmail", value: "REPLACE_WITH_ADMIN_EMAIL" },
       { name: "whatsappClientTemplateName", value: "proposal_ready" },
       { name: "fromEmail", value: "proposals@asdesignlb.com" },
       { name: "fromName", value: "Ali Mawla · AS Design Studio" },
@@ -112,6 +113,22 @@ return [{ json: { to: lead.contact.email, subject: "Your proposal from " + $('Co
   );
   wf.add(ifNode("WhatsApp? (sent)", [1340, -360], { left: "={{ $('Config').first().json.whatsappEnabled }}", op: "true" }, NAME));
   wf.add(whatsapp("WhatsApp · Sent", [1560, -360], "'Proposal sent: ' + $('Dispatch Webhook').first().json.body.lead.reference + ' · ' + $('Dispatch Webhook').first().json.body.proposal.display.total"));
+  wf.add(
+    code(
+      "Compose Admin Email · Sent",
+      [1340, -480],
+      ESCAPE_JS + "\n" + EMAIL_LAYOUT_JS + String.raw`
+const body = $('Dispatch Webhook').first().json.body;
+const html = emailLayout({
+  title: "Proposal sent · " + body.lead.reference,
+  bodyHtml: "<p>" + esc(body.lead.display.name) + " — <b>" + esc(body.proposal.display.total) + "</b></p>",
+  ctaUrl: body.links.admin,
+  ctaLabel: "Open lead",
+});
+return [{ json: { to: $('Config').first().json.adminEmail, subject: "Proposal sent · " + body.lead.reference, html } }];`,
+    ),
+  );
+  wf.add(email("Admin Email · Sent", [1560, -480], { to: "={{ $json.to }}", subject: "={{ $json.subject }}", html: "={{ $json.html }}" }));
 
   /* ---- client delivery: email leg (deliveryChannel: email | both, or unset) ---- */
   wf.add(
@@ -191,6 +208,23 @@ return [{ json: {
   wf.add(whatsapp("WhatsApp · Accepted", [1340, -60], "'🎉 Accepted: ' + $('Dispatch Webhook').first().json.body.lead.reference + ' · ' + $('Dispatch Webhook').first().json.body.proposal.display.total"));
   wf.add(
     code(
+      "Compose Admin Email · Accepted",
+      [1120, -180],
+      ESCAPE_JS + "\n" + EMAIL_LAYOUT_JS + String.raw`
+const body = $('Dispatch Webhook').first().json.body;
+const note = body.proposal.clientResponse && body.proposal.clientResponse.note;
+const html = emailLayout({
+  title: "🎉 Proposal accepted · " + body.lead.reference,
+  bodyHtml: "<p>" + esc(body.lead.display.name) + " signed <b>" + esc(body.proposal.display.total) + "</b></p>" + (note ? "<p><i>“" + esc(note) + "”</i></p>" : ""),
+  ctaUrl: body.links.admin,
+  ctaLabel: "Plan the kickoff",
+});
+return [{ json: { to: $('Config').first().json.adminEmail, subject: "🎉 Accepted · " + body.lead.reference, html } }];`,
+    ),
+  );
+  wf.add(email("Admin Email · Accepted", [1340, -180], { to: "={{ $json.to }}", subject: "={{ $json.subject }}", html: "={{ $json.html }}" }));
+  wf.add(
+    code(
       "Compose Welcome Email",
       [1120, 80],
       ESCAPE_JS +
@@ -224,6 +258,23 @@ return [{ json: { to: lead.contact.email, subject: "Welcome to " + cfg.fromName 
     ),
   );
   wf.add(
+    code(
+      "Compose Admin Email · Declined",
+      [900, 340],
+      ESCAPE_JS + "\n" + EMAIL_LAYOUT_JS + String.raw`
+const body = $('Dispatch Webhook').first().json.body;
+const note = body.proposal.clientResponse && body.proposal.clientResponse.note;
+const html = emailLayout({
+  title: "Proposal declined · " + body.lead.reference,
+  bodyHtml: "<p>" + esc(body.lead.display.name) + "</p>" + (note ? "<p><i>“" + esc(note) + "”</i></p>" : ""),
+  ctaUrl: body.links.admin,
+  ctaLabel: "Open lead",
+});
+return [{ json: { to: $('Config').first().json.adminEmail, subject: "Declined · " + body.lead.reference, html } }];`,
+    ),
+  );
+  wf.add(email("Admin Email · Declined", [1120, 340], { to: "={{ $json.to }}", subject: "={{ $json.subject }}", html: "={{ $json.html }}" }));
+  wf.add(
     telegram(
       "Telegram · Draft Ready",
       [900, 360],
@@ -242,6 +293,7 @@ return [{ json: { to: lead.contact.email, subject: "Welcome to " + cfg.fromName 
   wf.connect("Compose Proposal Email", "Telegram · Sent");
   wf.connect("Compose Proposal Email", "WhatsApp? (sent)");
   wf.connect("WhatsApp? (sent)", "WhatsApp · Sent", 0);
+  wf.chain("Compose Proposal Email", "Compose Admin Email · Sent", "Admin Email · Sent");
   wf.connect("Compose Proposal Email", "Client wants email?");
   wf.connect("Client wants email?", "Email Proposal to Client", 0);
   wf.chain("Email Proposal to Client", "Report proposal.sent (email)");
@@ -250,6 +302,10 @@ return [{ json: { to: lead.contact.email, subject: "Welcome to " + cfg.fromName 
   wf.chain("Compose Client WhatsApp", "Send Client WhatsApp", "Report proposal.sent (whatsapp)");
   wf.connect("Telegram · Accepted", "WhatsApp? (accepted)");
   wf.connect("WhatsApp? (accepted)", "WhatsApp · Accepted", 0);
+  wf.connect("Route Event", "Compose Admin Email · Accepted", 1);
+  wf.chain("Compose Admin Email · Accepted", "Admin Email · Accepted");
+  wf.connect("Route Event", "Compose Admin Email · Declined", 2);
+  wf.chain("Compose Admin Email · Declined", "Admin Email · Declined");
   wf.chain("Compose Welcome Email", "Send Welcome Email", "Report Welcome Email");
 
   return wf.build();

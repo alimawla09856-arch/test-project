@@ -132,6 +132,25 @@ export interface ClientResponse {
   at: string;
 }
 
+/** Arabic translation of the client-facing proposal text, cached on the proposal (see `src/lib/ai/translate.ts`). */
+export interface ProposalArabicText {
+  title: string;
+  executiveSummary: string;
+  approach: string;
+  nextSteps: string[];
+  notes: string | null;
+  /** Positionally aligned with `Proposal.phases`. */
+  phases: { name: string; summary: string }[];
+  /** Positionally aligned with `Proposal.lineItems`. */
+  lineItems: { title: string; description: string }[];
+}
+
+export interface ProposalTranslations {
+  ar: ProposalArabicText;
+  /** The `updatedAt` the translation was computed from — recomputed if the proposal changes after. */
+  forUpdatedAt: string;
+}
+
 export interface Proposal {
   id: string;
   leadId: string;
@@ -160,6 +179,8 @@ export interface Proposal {
   viewedAt: string | null;
   respondedAt: string | null;
   clientResponse: ClientResponse | null;
+  /** Cached Arabic translation for the bilingual PDF, or `null` until first rendered. */
+  translations: ProposalTranslations | null;
   createdAt: string;
   updatedAt: string;
 }

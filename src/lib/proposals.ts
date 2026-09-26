@@ -124,6 +124,7 @@ export function buildProposalDraft(params: {
     viewedAt: null,
     respondedAt: null,
     clientResponse: null,
+    translations: null,
   };
   return { ...draft, totals: computeTotals(draft) };
 }
