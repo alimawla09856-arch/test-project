@@ -2,7 +2,7 @@ import "server-only";
 import { BUDGET_MAP, CONTACT_METHODS, CURRENCY, labelFor, SERVICE_MAP, TIMELINE_MAP } from "@/config/catalog";
 import { toAiBrief } from "@/lib/ai/brief";
 import { getConfig } from "@/lib/env";
-import { formatMoney, formatRange, formatWeeks } from "@/lib/format";
+import { formatDate, formatMoney, formatRange, formatWeeks } from "@/lib/format";
 import { paymentBreakdown } from "@/lib/proposals";
 import type { Lead, Proposal } from "@/lib/types";
 
@@ -87,6 +87,7 @@ export function proposalPayload(proposal: Proposal) {
       total: formatMoney(proposal.totals.total, proposal.currency),
       monthly: proposal.totals.monthlyTotal ? `${formatMoney(proposal.totals.monthlyTotal, proposal.currency)}/month` : null,
       duration: formatWeeks(proposal.totals.totalWeeks),
+      validUntil: formatDate(proposal.validUntil),
     },
   };
 }

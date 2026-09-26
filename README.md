@@ -242,7 +242,7 @@ Auth: 🔓 public · 🍪 admin session cookie · 🔑 `Authorization: Bearer N8
   "id": "uuid", "type": "lead.created", "createdAt": "…",
   "app": { "baseUrl": "https://automation.asdesignlb.com", "apiBase": "…/api/v1" },
   "lead": { "id", "reference", "status", "contact", "project", "plan", "estimate", "display": { … }, "aiBrief": { … } },
-  "proposal": { "id", "status", "title", "lineItems", "phases", "totals", "paymentSchedule", "display": { "total", "monthly", "duration" }, … } | null,
+  "proposal": { "id", "status", "title", "lineItems", "phases", "totals", "paymentSchedule", "display": { "total", "monthly", "duration", "validUntil" }, … } | null,
   "links": { "admin", "proposal", "proposalPdf", "proposalApi", "proposalPdfApi" },
   "trigger": "…", "instructions": "…"      // event-specific extras
 }
