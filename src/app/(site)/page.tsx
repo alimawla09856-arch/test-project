@@ -5,7 +5,7 @@ import { SiteFooter, SiteHeader } from "@/components/site/SiteChrome";
 
 export default function HomePage() {
   return (
-    <main className="relative">
+    <main dir="rtl" lang="ar" className="relative">
       <SiteHeader />
       <Hero />
       <section id="builder" aria-label="Project builder" className="mx-auto max-w-6xl scroll-mt-6 px-3 sm:px-8">

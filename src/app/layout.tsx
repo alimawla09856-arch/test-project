@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Hanken_Grotesk, IBM_Plex_Mono } from "next/font/google";
+import { Cairo, Fraunces, Hanken_Grotesk, IBM_Plex_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { brand } from "@/config/brand";
 import "./globals.css";
@@ -15,6 +15,10 @@ const fraunces = Fraunces({
 const hanken = Hanken_Grotesk({ subsets: ["latin"], variable: "--font-hanken", display: "swap" });
 
 const plexMono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-plex-mono", display: "swap" });
+
+// Arabic client-facing surfaces (Project Builder, client portal, embed) use Cairo
+// instead of Fraunces/Hanken — neither Latin display font has Arabic glyphs.
+const cairo = Cairo({ subsets: ["arabic", "latin"], weight: ["400", "500", "600", "700"], variable: "--font-cairo", display: "swap" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(brand.appUrl),
@@ -37,7 +41,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${hanken.variable} ${plexMono.variable} h-full antialiased`}>
+    <html lang="en" className={`${fraunces.variable} ${hanken.variable} ${plexMono.variable} ${cairo.variable} h-full antialiased`}>
       <body className="min-h-full">
         {children}
         <Toaster

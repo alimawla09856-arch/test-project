@@ -7,7 +7,7 @@ import { enforceRateLimit } from "@/lib/rate-limit";
 
 const RespondSchema = z.object({
   decision: z.enum(["accepted", "declined"]),
-  name: z.string().trim().min(2, "Please type your full name").max(120),
+  name: z.string().trim().min(2, "الرجاء كتابة اسمك الكامل").max(120),
   note: z.string().trim().max(2000).nullish(),
   agree: z.boolean().optional(),
 });
@@ -17,7 +17,7 @@ export const POST = route<RouteContext<"/api/v1/portal/[token]/respond">>(async 
   await enforceRateLimit(`respond:${getClientIp(request) ?? "unknown"}`, 10, 10 * 60 * 1000);
   const body = await readJson(request, RespondSchema, { maxBytes: 16 * 1024 });
   if (body.decision === "accepted" && body.agree !== true) {
-    return jsonOk({ error: { code: "terms_required", message: "Please confirm you agree to the proposal terms" } }, { status: 422 });
+    return jsonOk({ error: { code: "terms_required", message: "الرجاء تأكيد موافقتك على شروط العرض" } }, { status: 422 });
   }
   const proposal = await respondToProposal({ token, decision: body.decision, name: body.name, note: body.note ?? null });
   return jsonOk({ status: proposal.status, respondedAt: proposal.respondedAt });

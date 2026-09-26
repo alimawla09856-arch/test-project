@@ -5,9 +5,9 @@ import { ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
 const MARKERS = [
-  { value: "≈ 5 min", label: "to share your brief" },
-  { value: "Live", label: "indicative estimate" },
-  { value: "Human", label: "reviewed proposal" },
+  { value: "≈ 5 دقائق", label: "لمشاركة تفاصيل مشروعك" },
+  { value: "مباشر", label: "تقدير أولي فوري" },
+  { value: "بشري", label: "مراجعة العرض" },
 ];
 
 export function Hero() {
@@ -21,29 +21,28 @@ export function Hero() {
   return (
     <section className="relative mx-auto max-w-6xl px-5 pb-16 pt-14 sm:px-8 sm:pt-20 lg:pb-24">
       <motion.p {...item(0.05)} className="font-mono text-[11px] uppercase tracking-[0.32em] text-ember-300">
-        Project Builder <span className="text-fog">·</span> AI-assisted proposals
+        مُصمّم المشاريع <span className="text-fog">·</span> عروض مدعومة بالذكاء الاصطناعي
       </motion.p>
-      <h1 className="mt-6 max-w-5xl font-display text-[44px] leading-[0.98] tracking-[-0.03em] text-ivory sm:text-[72px] lg:text-[92px]">
-        <motion.span {...item(0.12)} className="block font-soft">
-          Tell us what you&apos;re building.
+      <h1 className="mt-6 max-w-5xl font-display text-[40px] leading-[1.15] tracking-normal text-ivory sm:text-[60px] lg:text-[74px]">
+        <motion.span {...item(0.12)} className="block">
+          أخبرنا عمّا تريد بناءه.
         </motion.span>
-        <motion.span {...item(0.24)} className="block font-wonk italic text-ember-gradient">
-          We&apos;ll draft the blueprint.
+        <motion.span {...item(0.24)} className="block text-ember-gradient">
+          وسنعدّ لك المخطط.
         </motion.span>
       </h1>
       <motion.p {...item(0.36)} className="mt-7 max-w-2xl text-[17px] leading-relaxed text-mist sm:text-[19px]">
-        Answer a few questions and our studio assistant prepares a tailored scope, timeline and investment proposal — refined by a strategist
-        before it reaches your inbox.
+        أجب عن بضعة أسئلة، ويقوم مساعدنا بإعداد نطاق عمل وجدول زمني وعرض استثمار مخصص لك — يراجعه استراتيجي قبل أن يصلك.
       </motion.p>
       <motion.div {...item(0.48)} className="mt-10 flex flex-wrap items-center gap-3">
         <a href="#builder">
           <Button size="lg">
-            Start your brief <ArrowDown className="size-4" />
+            <ArrowDown className="size-4" /> ابدأ تفاصيل مشروعك
           </Button>
         </a>
         <a href="#how-it-works">
           <Button size="lg" variant="ghost">
-            How it works
+            كيف تعمل الخدمة
           </Button>
         </a>
       </motion.div>

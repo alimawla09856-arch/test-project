@@ -84,12 +84,12 @@ export const EMPTY_DRAFT: BuilderDraft = {
 };
 
 export const STEPS: { key: BuilderStepKey | "review"; label: string; title: string; subtitle: string }[] = [
-  { key: "services", label: "Services", title: "What can we craft together?", subtitle: "Choose everything that's on your mind — you can refine the mix later." },
-  { key: "vision", label: "Vision", title: "Tell us about the project", subtitle: "The more context you share, the sharper your proposal will be." },
-  { key: "scope", label: "Scope", title: "Shape the scope", subtitle: "Pick the capabilities you need and how far you want to take it." },
-  { key: "plan", label: "Budget", title: "Budget & timeline", subtitle: "A realistic range helps us propose the right scope — no surprises." },
-  { key: "contact", label: "Contact", title: "Who should we send it to?", subtitle: "We'll only use your details to prepare and discuss your proposal." },
-  { key: "review", label: "Review", title: "Review your brief", subtitle: "Everything look right? Submit and we'll get to work." },
+  { key: "services", label: "الخدمات", title: "ما الذي يمكننا صنعه معاً؟", subtitle: "اختر كل ما يدور في ذهنك — يمكنك تعديل المزيج لاحقاً." },
+  { key: "vision", label: "الرؤية", title: "أخبرنا عن مشروعك", subtitle: "كلما شاركت سياقاً أكثر، كان عرضك أدق." },
+  { key: "scope", label: "النطاق", title: "حدّد نطاق العمل", subtitle: "اختر القدرات التي تحتاجها ومدى طموحك في المشروع." },
+  { key: "plan", label: "الميزانية", title: "الميزانية والجدول الزمني", subtitle: "نطاق واقعي يساعدنا على اقتراح النطاق الصحيح — دون مفاجآت." },
+  { key: "contact", label: "التواصل", title: "لمن نرسل العرض؟", subtitle: "سنستخدم بياناتك فقط لإعداد عرضك ومناقشته." },
+  { key: "review", label: "المراجعة", title: "راجع تفاصيل مشروعك", subtitle: "كل شيء يبدو صحيحاً؟ أرسل وسنبدأ العمل." },
 ];
 
 const STORAGE_KEY = "asd-builder-draft-v1";

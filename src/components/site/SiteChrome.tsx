@@ -6,10 +6,10 @@ import { WhatsAppButton } from "./WhatsAppButton";
 export function SiteHeader() {
   return (
     <header className="relative z-10 mx-auto flex max-w-6xl items-center justify-between px-5 py-6 sm:px-8">
-      <Logo subtitle="Studio platform" />
+      <Logo subtitle="منصة الاستوديو" />
       <nav className="flex items-center gap-1 text-[13.5px]">
         <a href="#how-it-works" className="hidden rounded-full px-3 py-2 text-mist transition hover:text-ivory sm:inline-block">
-          How it works
+          كيف تعمل الخدمة
         </a>
         <WhatsAppButton />
         <a
@@ -32,7 +32,7 @@ export function SiteFooter() {
           {brand.location ? ` · ${brand.location}` : ""}
         </p>
         <p className="max-w-md leading-relaxed">
-          Your brief is used only to prepare and discuss your proposal. Questions? <a className="text-mist underline-offset-4 hover:text-ivory hover:underline" href={`mailto:${brand.contactEmail}`}>{brand.contactEmail}</a>
+          تُستخدم تفاصيل مشروعك فقط لإعداد عرضك ومناقشته. لديك سؤال؟ <a className="text-mist underline-offset-4 hover:text-ivory hover:underline" href={`mailto:${brand.contactEmail}`}>{brand.contactEmail}</a>
         </p>
       </div>
     </footer>

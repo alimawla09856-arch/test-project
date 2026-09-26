@@ -4,11 +4,22 @@ import { cn } from "./cn";
 export const inputClass =
   "w-full rounded-xl border border-white/10 bg-white/[0.035] px-4 py-3 text-[15px] text-ivory placeholder:text-fog/80 shadow-[inset_0_1px_0_rgb(255_255_255/0.04)] outline-none transition-all duration-300 hover:border-white/20 focus:border-ember-400/60 focus:bg-white/[0.06] focus:shadow-[0_0_0_4px_rgb(255_138_76/0.12)] aria-[invalid=true]:border-danger/60";
 
-export function Label({ htmlFor, children, optional, className }: { htmlFor?: string; children: ReactNode; optional?: boolean; className?: string }) {
+export function Label({
+  htmlFor,
+  children,
+  optional,
+  className,
+}: {
+  htmlFor?: string;
+  children: ReactNode;
+  /** `true` shows "Optional"; pass a string (e.g. "اختياري") to localize it. */
+  optional?: boolean | string;
+  className?: string;
+}) {
   return (
     <label htmlFor={htmlFor} className={cn("mb-2 flex items-baseline justify-between gap-3 text-[13px] font-medium text-mist", className)}>
       <span>{children}</span>
-      {optional ? <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-fog">Optional</span> : null}
+      {optional ? <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-fog">{optional === true ? "Optional" : optional}</span> : null}
     </label>
   );
 }

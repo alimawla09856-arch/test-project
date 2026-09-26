@@ -15,6 +15,10 @@ import { SuccessScreen, type SubmissionResult } from "./SuccessScreen";
 
 export type BuilderVariant = "page" | "embed";
 
+// This builder is Arabic/RTL: "back" points toward reading-start (right), "forward" toward reading-end (left).
+const BackIcon = ArrowRight;
+const ForwardIcon = ArrowLeft;
+
 /** Pull attribution from the page URL (the embed loader forwards the host page's UTMs & URL). */
 function readAttribution(variant: BuilderVariant): LeadSubmissionInput["meta"] {
   if (typeof window === "undefined") return { source: variant === "embed" ? "embed" : "builder" };
@@ -112,7 +116,7 @@ export function ProjectBuilder({ variant = "page" }: { variant?: BuilderVariant 
       if (Object.keys(stepErrors).length) {
         goTo(i);
         setErrors(stepErrors);
-        toast.error("A few details need your attention.");
+        toast.error("بعض التفاصيل تحتاج إلى مراجعة.");
         return;
       }
     }
@@ -127,8 +131,8 @@ export function ProjectBuilder({ variant = "page" }: { variant?: BuilderVariant 
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) {
-        if (response.status === 429) toast.error("You've submitted a few briefs already — please try again in a few minutes.");
-        else toast.error(body?.error?.message ?? "We couldn't submit your brief. Please try again.");
+        if (response.status === 429) toast.error("لقد أرسلت عدة تفاصيل مشاريع بالفعل — الرجاء المحاولة بعد بضع دقائق.");
+        else toast.error(body?.error?.message ?? "تعذّر إرسال تفاصيل مشروعك. الرجاء المحاولة مجدداً.");
         return;
       }
       setResult({ reference: body.reference, estimate: body.estimate, name: draft.contact.name.split(" ")[0] ?? "" });
@@ -136,7 +140,7 @@ export function ProjectBuilder({ variant = "page" }: { variant?: BuilderVariant 
       reset();
       scrollToPanel();
     } catch {
-      toast.error("Network error — check your connection and try again.");
+      toast.error("خطأ في الشبكة — تحقق من اتصالك وحاول مجدداً.");
     } finally {
       setSubmitting(false);
     }
@@ -163,7 +167,7 @@ export function ProjectBuilder({ variant = "page" }: { variant?: BuilderVariant 
 
   return (
     <MotionConfig reducedMotion="user">
-      <div ref={rootRef} className={cn("relative", variant === "embed" ? "p-3 sm:p-5" : "")}>
+      <div ref={rootRef} dir="rtl" lang="ar" className={cn("relative", variant === "embed" ? "p-3 sm:p-5" : "")}>
         <AnimatePresence mode="wait">
           {result ? (
             <SuccessScreen key="success" result={result} variant={variant} onRestart={() => { setResult(null); setStepIndex(0); }} />
@@ -171,7 +175,7 @@ export function ProjectBuilder({ variant = "page" }: { variant?: BuilderVariant 
             <motion.div key="builder" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -12 }} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_380px]">
               <div ref={panelRef} className="glass edge-light scroll-mt-8 rounded-[28px] p-5 sm:p-8">
                 {/* Progress */}
-                <nav aria-label="Brief progress" className="mb-8">
+                <nav aria-label="تقدّم تفاصيل المشروع" className="mb-8">
                   <ol className="flex items-center gap-1.5">
                     {STEPS.map((item, index) => (
                       <li key={item.key} className="flex-1">
@@ -180,11 +184,11 @@ export function ProjectBuilder({ variant = "page" }: { variant?: BuilderVariant 
                           disabled={index > stepIndex}
                           onClick={() => goTo(index)}
                           aria-current={index === stepIndex ? "step" : undefined}
-                          className="group block w-full text-left disabled:cursor-not-allowed"
+                          className="group block w-full text-start disabled:cursor-not-allowed"
                         >
                           <span className="relative block h-1 overflow-hidden rounded-full bg-white/[0.08]">
                             <motion.span
-                              className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-ember-400 to-ember-300"
+                              className="absolute inset-y-0 start-0 rounded-full bg-gradient-to-r from-ember-400 to-ember-300"
                               initial={false}
                               animate={{ width: index < stepIndex ? "100%" : index === stepIndex ? "55%" : "0%" }}
                               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
@@ -206,14 +210,14 @@ export function ProjectBuilder({ variant = "page" }: { variant?: BuilderVariant 
 
                 {restored && stepIndex === 0 ? (
                   <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-glacier-400/20 bg-glacier-400/[0.06] px-4 py-3 text-[13.5px] text-glacier-200">
-                    <span>Welcome back — we restored your draft brief.</span>
+                    <span>مرحباً بعودتك — استعدنا مسودة تفاصيل مشروعك.</span>
                     <span className="flex gap-2">
                       <button type="button" onClick={dismissRestored} className="text-glacier-300 hover:text-glacier-200">
-                        Continue
+                        متابعة
                       </button>
                       <span className="text-glacier-400/40">·</span>
                       <button type="button" onClick={reset} className="inline-flex items-center gap-1 text-mist hover:text-ivory">
-                        <RotateCcw className="size-3" /> Start over
+                        <RotateCcw className="size-3" /> البدء من جديد
                       </button>
                     </span>
                   </div>
@@ -230,8 +234,8 @@ export function ProjectBuilder({ variant = "page" }: { variant?: BuilderVariant 
                     aria-labelledby={`step-${step.key}-title`}
                   >
                     <header className="mb-7">
-                      <p className="font-mono text-[11px] uppercase tracking-[0.26em] text-ember-300">
-                        Step {String(stepIndex + 1).padStart(2, "0")} <span className="text-fog">/ {String(STEPS.length).padStart(2, "0")}</span>
+                      <p className="font-mono text-[11px] uppercase tracking-[0.26em] text-ember-300" dir="ltr">
+                        {String(stepIndex + 1).padStart(2, "0")} <span className="text-fog">/ {String(STEPS.length).padStart(2, "0")}</span>
                       </p>
                       <h2 id={`step-${step.key}-title`} className="mt-3 font-display text-[30px] leading-[1.08] tracking-tight text-ivory sm:text-[38px]">
                         {step.title}
@@ -243,7 +247,7 @@ export function ProjectBuilder({ variant = "page" }: { variant?: BuilderVariant 
                 </AnimatePresence>
 
                 {/* Honeypot — hidden from people and assistive tech. */}
-                <div aria-hidden="true" className="absolute -left-[9999px] top-0 h-px w-px overflow-hidden">
+                <div aria-hidden="true" className="absolute -start-[9999px] top-0 h-px w-px overflow-hidden">
                   <label>
                     Company website
                     <input tabIndex={-1} autoComplete="off" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} name="company_website" />
@@ -252,15 +256,15 @@ export function ProjectBuilder({ variant = "page" }: { variant?: BuilderVariant 
 
                 <footer className="mt-10 flex items-center justify-between gap-3 border-t border-white/[0.06] pt-6">
                   <Button variant="ghost" onClick={() => goTo(stepIndex - 1)} disabled={stepIndex === 0} className={cn(stepIndex === 0 && "invisible")}>
-                    <ArrowLeft className="size-4" /> Back
+                    <BackIcon className="size-4" /> رجوع
                   </Button>
                   {isReview ? (
                     <Button size="lg" onClick={submit} loading={submitting}>
-                      <Sparkles className="size-4" /> Submit my brief
+                      <Sparkles className="size-4" /> إرسال تفاصيل مشروعي
                     </Button>
                   ) : (
                     <Button size="lg" onClick={next}>
-                      Continue <ArrowRight className="size-4" />
+                      متابعة <ForwardIcon className="size-4" />
                     </Button>
                   )}
                 </footer>

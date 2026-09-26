@@ -78,9 +78,9 @@ async function handleTranscribe(request: Request, cors: HeadersInit): Promise<Re
   if (!(audio instanceof File)) {
     throw new ApiError(400, "invalid_request", 'Missing "audio" file field.');
   }
-  if (audio.size === 0) throw new ApiError(400, "invalid_request", "The recording is empty.");
+  if (audio.size === 0) throw new ApiError(400, "invalid_request", "التسجيل فارغ.");
   if (audio.size > MAX_AUDIO_BYTES) {
-    throw new ApiError(413, "payload_too_large", "Recording is too long (25MB max, roughly 20–25 minutes).");
+    throw new ApiError(413, "payload_too_large", "التسجيل طويل جداً (الحد الأقصى 25 ميغابايت، أي نحو 20–25 دقيقة).");
   }
   const mime = audio.type.split(";")[0]?.trim();
   if (mime && !ALLOWED_TYPES.has(mime)) {
@@ -99,13 +99,13 @@ async function handleTranscribe(request: Request, cors: HeadersInit): Promise<Re
     })) as unknown as WhisperVerboseResult;
   } catch (error) {
     if (error instanceof OpenAI.APIError) {
-      throw new ApiError(502, "transcription_failed", `Transcription failed: ${error.message}`);
+      throw new ApiError(502, "transcription_failed", `تعذّر التفريغ الصوتي: ${error.message}`);
     }
     throw error;
   }
 
   const text = result.text?.trim() ?? "";
-  if (!text) throw new ApiError(422, "empty_transcript", "Couldn't make out any speech in that recording — please try again.");
+  if (!text) throw new ApiError(422, "empty_transcript", "تعذّر تمييز أي كلام في هذا التسجيل — الرجاء المحاولة مجدداً.");
 
   return withHeaders(jsonOk({ text, language: result.language ?? null, duration: result.duration ?? null }), cors);
 }

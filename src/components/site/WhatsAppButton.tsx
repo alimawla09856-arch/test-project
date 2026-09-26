@@ -9,7 +9,7 @@ import { cn } from "@/components/ui/cn";
 export function WhatsAppButton({ className }: { className?: string }) {
   if (!brand.whatsappNumber) return null;
   const digits = brand.whatsappNumber.replace(/[^0-9]/g, "");
-  const text = encodeURIComponent(`Hi ${brand.owner}, I'd like to start a project with ${brand.name}.`);
+  const text = encodeURIComponent(`مرحباً ${brand.owner}، أرغب ببدء مشروع مع ${brand.name}.`);
   return (
     <a
       href={`https://wa.me/${digits}?text=${text}`}

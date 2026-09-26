@@ -3,23 +3,23 @@ import { FileCheck2, MessagesSquare, PenLine, Workflow } from "lucide-react";
 const STEPS = [
   {
     icon: PenLine,
-    title: "Share your brief",
-    body: "Pick services, describe your goals and set a realistic budget and timeline. Your live blueprint prices it as you go.",
+    title: "شارك تفاصيل مشروعك",
+    body: "اختر الخدمات، صف أهدافك، وحدّد ميزانية وجدولاً زمنياً واقعياً. مخططك المباشر يسعّر ذلك أولاً بأول.",
   },
   {
     icon: Workflow,
-    title: "AI-assisted scoping",
-    body: "Our studio assistant maps the brief onto our rate card: deliverables, phases, risks and a recommended investment.",
+    title: "تحديد النطاق بالذكاء الاصطناعي",
+    body: "يقوم مساعدنا بمطابقة تفاصيل مشروعك مع قائمة أسعارنا: التسليمات، المراحل، المخاطر، والاستثمار الموصى به.",
   },
   {
     icon: MessagesSquare,
-    title: "Strategist review",
-    body: "A strategist sharpens the scope, pricing and timeline — nothing reaches you without a human sign-off.",
+    title: "مراجعة استراتيجية",
+    body: "يصقل استراتيجي النطاق والتسعير والجدول الزمني — لا شيء يصلك دون مراجعة بشرية.",
   },
   {
     icon: FileCheck2,
-    title: "Accept & kick off",
-    body: "Receive a polished proposal with a PDF and a private link where you can review and accept online.",
+    title: "الموافقة والانطلاق",
+    body: "استلم عرضاً متقناً مع ملف PDF ورابط خاص يمكنك من خلاله المراجعة والموافقة أونلاين.",
   },
 ];
 
@@ -27,9 +27,9 @@ export function HowItWorks() {
   return (
     <section id="how-it-works" className="mx-auto max-w-6xl scroll-mt-10 px-5 pt-28 sm:px-8">
       <div className="max-w-2xl">
-        <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-ember-300">How it works</p>
-        <h2 className="text-balance-safe mt-4 font-display text-[36px] leading-[1.05] tracking-tight text-ivory sm:text-[52px]">
-          From first idea to a signed&#8209;off plan, <span className="font-wonk italic text-ember-gradient">without the endless back&#8209;and&#8209;forth.</span>
+        <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-ember-300">كيف تعمل الخدمة</p>
+        <h2 className="text-balance-safe mt-4 font-display text-[32px] leading-[1.3] text-ivory sm:text-[44px]">
+          من الفكرة الأولى إلى خطة معتمدة، <span className="text-ember-gradient">دون جولات لا تنتهي من التواصل.</span>
         </h2>
       </div>
       <ol className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-4">

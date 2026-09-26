@@ -1,5 +1,6 @@
 import { CalendarRange, Clock3, Download, Layers3, Wallet } from "lucide-react";
-import { formatDate, formatMoney, formatWeeks } from "@/lib/format";
+import { formatDate, formatMoney } from "@/lib/format";
+import { formatWeeksAr as formatWeeks } from "@/lib/format.ar";
 import { paymentBreakdown, phaseOffsets } from "@/lib/proposals";
 import type { Lead, Proposal } from "@/lib/types";
 import { cn } from "@/components/ui/cn";
@@ -42,27 +43,27 @@ export function ProposalSummaryCard({ proposal, pdfHref }: { proposal: Proposal;
   const money = (value: number) => formatMoney(value, proposal.currency);
   return (
     <div className="glass edge-light rounded-3xl p-6">
-      <p className="font-mono text-[10.5px] uppercase tracking-[0.26em] text-fog">Total investment</p>
+      <p className="font-mono text-[10.5px] uppercase tracking-[0.26em] text-fog">إجمالي الاستثمار</p>
       <p className="mt-2 font-display text-[40px] leading-none tracking-tight text-ivory">{money(proposal.totals.total)}</p>
       {proposal.totals.monthlyTotal > 0 ? (
-        <p className="mt-2 text-[13.5px] text-mist">+ {money(proposal.totals.monthlyTotal)}/month ongoing</p>
+        <p className="mt-2 text-[13.5px] text-mist">+ {money(proposal.totals.monthlyTotal)}/شهرياً بشكل مستمر</p>
       ) : null}
       <dl className="mt-6 space-y-3 border-t border-white/[0.07] pt-5 text-[14px]">
         <div className="flex items-center justify-between gap-4">
           <dt className="flex items-center gap-2 text-fog">
-            <Clock3 className="size-4" /> Timeline
+            <Clock3 className="size-4" /> الجدول الزمني
           </dt>
           <dd className="text-ivory">{formatWeeks(proposal.totals.totalWeeks)}</dd>
         </div>
         <div className="flex items-center justify-between gap-4">
           <dt className="flex items-center gap-2 text-fog">
-            <Layers3 className="size-4" /> Phases
+            <Layers3 className="size-4" /> المراحل
           </dt>
           <dd className="text-ivory">{proposal.phases.length}</dd>
         </div>
         <div className="flex items-center justify-between gap-4">
           <dt className="flex items-center gap-2 text-fog">
-            <CalendarRange className="size-4" /> Valid until
+            <CalendarRange className="size-4" /> صالح حتى
           </dt>
           <dd className="text-ivory">{formatDate(proposal.validUntil)}</dd>
         </div>
@@ -71,7 +72,7 @@ export function ProposalSummaryCard({ proposal, pdfHref }: { proposal: Proposal;
         href={pdfHref}
         className="mt-6 flex items-center justify-center gap-2 rounded-xl border border-white/12 bg-white/[0.04] px-4 py-3 text-[14px] text-ivory transition hover:border-white/25 hover:bg-white/[0.08]"
       >
-        <Download className="size-4" /> Download PDF
+        <Download className="size-4" /> تحميل PDF
       </a>
     </div>
   );
@@ -90,18 +91,18 @@ export function ProposalView({ proposal, lead }: { proposal: Proposal; lead: Lea
   return (
     <div className="space-y-6">
       <section className="glass edge-light rounded-[28px] p-6 sm:p-10">
-        <SectionHeading index={nextSection()} label="Executive summary" title={`Hello ${lead.contact.company ?? lead.contact.name.split(" ")[0]},`} />
+        <SectionHeading index={nextSection()} label="الملخص التنفيذي" title={`مرحباً ${lead.contact.company ?? lead.contact.name.split(" ")[0]}،`} />
         <Paragraphs text={proposal.executiveSummary} />
         {proposal.approach ? (
           <div className="mt-8 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5 sm:p-6">
-            <p className="mb-3 font-mono text-[10.5px] uppercase tracking-[0.24em] text-fog">Our approach</p>
+            <p className="mb-3 font-mono text-[10.5px] uppercase tracking-[0.24em] text-fog">منهجيتنا</p>
             <Paragraphs text={proposal.approach} />
           </div>
         ) : null}
       </section>
 
       <section className="glass edge-light rounded-[28px] p-6 sm:p-10">
-        <SectionHeading index={nextSection()} label="Scope" title="What we'll deliver" />
+        <SectionHeading index={nextSection()} label="النطاق" title="ما الذي سنقدّمه" />
         <div className="space-y-8">
           {proposal.phases.map((phase, index) => {
             const items = included.filter((item) => item.phase === phase.name);
@@ -124,7 +125,7 @@ export function ProposalView({ proposal, lead }: { proposal: Proposal; lead: Lea
                       </div>
                       <p className="shrink-0 font-mono text-[14px] text-ivory/90">
                         {money(item.price)}
-                        {item.billing === "monthly" ? <span className="text-fog">/mo</span> : null}
+                        {item.billing === "monthly" ? <span className="text-fog">/شهرياً</span> : null}
                       </p>
                     </li>
                   ))}
@@ -134,7 +135,7 @@ export function ProposalView({ proposal, lead }: { proposal: Proposal; lead: Lea
           })}
           {optional.length ? (
             <div className="rounded-2xl border border-dashed border-white/15 p-5">
-              <p className="font-mono text-[10.5px] uppercase tracking-[0.24em] text-glacier-300">Optional add-ons · not included in the total</p>
+              <p className="font-mono text-[10.5px] uppercase tracking-[0.24em] text-glacier-300">إضافات اختيارية · غير مشمولة في الإجمالي</p>
               <ul className="mt-3 divide-y divide-white/[0.06]">
                 {optional.map((item) => (
                   <li key={item.id} className="flex items-start justify-between gap-6 py-3.5">
@@ -144,7 +145,7 @@ export function ProposalView({ proposal, lead }: { proposal: Proposal; lead: Lea
                     </div>
                     <p className="shrink-0 font-mono text-[13.5px] text-mist">
                       {money(item.price)}
-                      {item.billing === "monthly" ? "/mo" : ""}
+                      {item.billing === "monthly" ? "/شهرياً" : ""}
                     </p>
                   </li>
                 ))}
@@ -155,7 +156,7 @@ export function ProposalView({ proposal, lead }: { proposal: Proposal; lead: Lea
       </section>
 
       <section className="glass edge-light rounded-[28px] p-6 sm:p-10">
-        <SectionHeading index={nextSection()} label="Timeline" title={`${formatWeeks(proposal.totals.totalWeeks)} from kickoff to launch`} />
+        <SectionHeading index={nextSection()} label="الجدول الزمني" title={`${formatWeeks(proposal.totals.totalWeeks)} من الانطلاق إلى الإطلاق`} />
         <div className="space-y-4">
           {gantt.map((phase, index) => (
             <div key={phase.id} className="grid items-center gap-2 sm:grid-cols-[180px_1fr_80px] sm:gap-4">
@@ -190,40 +191,40 @@ export function ProposalView({ proposal, lead }: { proposal: Proposal; lead: Lea
       </section>
 
       <section className="glass edge-light rounded-[28px] p-6 sm:p-10">
-        <SectionHeading index={nextSection()} label="Investment" title="Your investment" />
+        <SectionHeading index={nextSection()} label="الاستثمار" title="استثمارك" />
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="rounded-2xl border border-white/[0.08] bg-gradient-to-br from-ember-500/[0.12] via-transparent to-glacier-400/[0.06] p-6">
             <dl className="space-y-2.5 text-[14.5px]">
               <div className="flex justify-between">
-                <dt className="text-mist">Project subtotal</dt>
+                <dt className="text-mist">إجمالي المشروع الفرعي</dt>
                 <dd className="font-mono text-ivory">{money(proposal.totals.oneTimeSubtotal)}</dd>
               </div>
               {proposal.totals.discountAmount > 0 ? (
                 <div className="flex justify-between">
-                  <dt className="text-mist">{proposal.discount?.label ?? "Discount"}</dt>
+                  <dt className="text-mist">{proposal.discount?.label ?? "خصم"}</dt>
                   <dd className="font-mono text-glacier-300">− {money(proposal.totals.discountAmount)}</dd>
                 </div>
               ) : null}
               {proposal.totals.taxAmount > 0 ? (
                 <div className="flex justify-between">
-                  <dt className="text-mist">Tax ({proposal.taxRate}%)</dt>
+                  <dt className="text-mist">الضريبة ({proposal.taxRate}%)</dt>
                   <dd className="font-mono text-ivory">{money(proposal.totals.taxAmount)}</dd>
                 </div>
               ) : null}
             </dl>
             <div className="mt-5 border-t border-white/10 pt-5">
-              <p className="font-mono text-[10.5px] uppercase tracking-[0.24em] text-fog">Total project investment</p>
+              <p className="font-mono text-[10.5px] uppercase tracking-[0.24em] text-fog">إجمالي استثمار المشروع</p>
               <p className="mt-2 font-display text-[44px] leading-none tracking-tight text-ivory">
-                <Wallet className="mr-3 inline size-7 -translate-y-1 text-ember-300" strokeWidth={1.5} />
+                <Wallet className="me-3 inline size-7 -translate-y-1 text-ember-300" strokeWidth={1.5} />
                 {money(proposal.totals.total)}
               </p>
               {proposal.totals.monthlyTotal > 0 ? (
-                <p className="mt-3 text-[14px] text-mist">Plus {money(proposal.totals.monthlyTotal)} per month in ongoing services.</p>
+                <p className="mt-3 text-[14px] text-mist">بالإضافة إلى {money(proposal.totals.monthlyTotal)} شهرياً للخدمات المستمرة.</p>
               ) : null}
             </div>
           </div>
           <div>
-            <p className="mb-3 font-mono text-[10.5px] uppercase tracking-[0.24em] text-fog">Payment schedule</p>
+            <p className="mb-3 font-mono text-[10.5px] uppercase tracking-[0.24em] text-fog">جدول الدفعات</p>
             <ol className="divide-y divide-white/[0.06] overflow-hidden rounded-2xl border border-white/[0.08]">
               {schedule.map((milestone, index) => (
                 <li key={milestone.label} className="flex items-center gap-4 bg-white/[0.015] px-5 py-4">
@@ -242,7 +243,7 @@ export function ProposalView({ proposal, lead }: { proposal: Proposal; lead: Lea
         <section className="glass edge-light grid gap-8 rounded-[28px] p-6 sm:p-10 lg:grid-cols-2">
           {proposal.assumptions.length ? (
             <div>
-              <SectionHeading index={nextSection()} label="Assumptions" title="What this assumes" />
+              <SectionHeading index={nextSection()} label="الافتراضات" title="ما يفترضه هذا العرض" />
               <ul className="space-y-3">
                 {proposal.assumptions.map((assumption) => (
                   <li key={assumption} className="flex gap-3 text-[14.5px] leading-relaxed text-mist">
@@ -255,7 +256,7 @@ export function ProposalView({ proposal, lead }: { proposal: Proposal; lead: Lea
           ) : null}
           {proposal.nextSteps.length ? (
             <div>
-              <SectionHeading index={nextSection()} label="Next steps" title="Let's get started" />
+              <SectionHeading index={nextSection()} label="الخطوات التالية" title="لنبدأ العمل" />
               <ol className="space-y-3">
                 {proposal.nextSteps.map((step, index) => (
                   <li key={step} className="flex gap-3 text-[14.5px] leading-relaxed text-ivory/85">

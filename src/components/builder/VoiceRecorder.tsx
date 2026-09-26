@@ -83,13 +83,13 @@ export function VoiceRecorder({ onTranscript, className }: VoiceRecorderProps) {
         const res = await fetch("/api/v1/transcribe", { method: "POST", body });
         const data = (await res.json().catch(() => null)) as { text?: string; error?: { message?: string } } | null;
         if (!res.ok || !data?.text) {
-          throw new Error(data?.error?.message ?? "Transcription failed — please try again.");
+          throw new Error(data?.error?.message ?? "تعذّر التفريغ الصوتي — الرجاء المحاولة مجدداً.");
         }
         onTranscript(data.text);
         setStatus("idle");
         setSeconds(0);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Transcription failed — please try again.");
+        setError(err instanceof Error ? err.message : "تعذّر التفريغ الصوتي — الرجاء المحاولة مجدداً.");
         setStatus("error");
       }
     },
@@ -105,7 +105,7 @@ export function VoiceRecorder({ onTranscript, className }: VoiceRecorderProps) {
       const permission = await navigator.permissions.query({ name: "microphone" as PermissionName });
       if (permission.state === "denied") {
         setStatus("error");
-        setError("Microphone is blocked for this site — click the lock/site-info icon in your browser's address bar, allow the microphone, then try again.");
+        setError("الميكروفون محظور لهذا الموقع — اضغط أيقونة القفل/معلومات الموقع في شريط عنوان المتصفح، اسمح بالميكروفون، ثم حاول مجدداً.");
         return;
       }
     } catch {
@@ -157,9 +157,9 @@ export function VoiceRecorder({ onTranscript, className }: VoiceRecorderProps) {
       setAwaitingPermission(false);
       const name = err instanceof DOMException ? err.name : "";
       if (name === "NotFoundError" || name === "DevicesNotFoundError") {
-        setError("No microphone was found on this device.");
+        setError("لم يتم العثور على ميكروفون في هذا الجهاز.");
       } else {
-        setError("Microphone access was blocked — click the lock/site-info icon in your browser's address bar, allow the microphone, then try again.");
+        setError("تم حظر الوصول إلى الميكروفون — اضغط أيقونة القفل/معلومات الموقع في شريط عنوان المتصفح، اسمح بالميكروفون، ثم حاول مجدداً.");
       }
       setStatus("error");
       cleanup();
@@ -191,14 +191,14 @@ export function VoiceRecorder({ onTranscript, className }: VoiceRecorderProps) {
               role="status"
               className="absolute bottom-full left-1/2 z-10 mb-2 w-max max-w-[220px] -translate-x-1/2 rounded-lg border border-ember-400/40 bg-ink-850 px-3 py-2 text-center text-[12px] leading-snug text-ivory shadow-lg"
             >
-              👆 Click <strong>Allow</strong> in your browser&apos;s popup to enable your mic
+              👆 اضغط <strong>السماح</strong> في نافذة المتصفح لتفعيل الميكروفون
               <span className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-ink-850" />
             </div>
           ) : null}
           {status === "recording" ? (
-            <Button type="button" variant="danger" size="sm" onClick={stop} aria-label="Stop recording">
+            <Button type="button" variant="danger" size="sm" onClick={stop} aria-label="إيقاف التسجيل">
               <Square className="size-3.5" fill="currentColor" />
-              Stop
+              إيقاف
             </Button>
           ) : (
             <Button
@@ -207,10 +207,10 @@ export function VoiceRecorder({ onTranscript, className }: VoiceRecorderProps) {
               size="sm"
               onClick={start}
               loading={status === "processing" || awaitingPermission}
-              aria-label="Record a voice note"
+              aria-label="تسجيل ملاحظة صوتية"
             >
               {status !== "processing" && !awaitingPermission ? <Mic className="size-3.5" /> : null}
-              {awaitingPermission ? "Waiting for mic access…" : status === "processing" ? "Transcribing…" : "Record a voice note"}
+              {awaitingPermission ? "بانتظار إذن الميكروفون…" : status === "processing" ? "جارٍ التفريغ الصوتي…" : "تسجيل ملاحظة صوتية"}
             </Button>
           )}
         </div>
@@ -228,7 +228,7 @@ export function VoiceRecorder({ onTranscript, className }: VoiceRecorderProps) {
         {status === "recording" ? <span className="font-mono text-[12px] tabular-nums text-mist">{mm}:{ss}</span> : null}
 
         {status === "error" ? (
-          <button type="button" onClick={discard} className="text-fog hover:text-ivory" aria-label="Dismiss">
+          <button type="button" onClick={discard} className="text-fog hover:text-ivory" aria-label="إغلاق">
             <Trash2 className="size-4" />
           </button>
         ) : null}
@@ -236,12 +236,12 @@ export function VoiceRecorder({ onTranscript, className }: VoiceRecorderProps) {
 
       {status === "processing" ? (
         <p className="mt-2.5 flex items-center gap-1.5 text-[12.5px] text-fog">
-          <Loader2 className="size-3 animate-spin" /> Transcribing your voice note (English or Arabic)…
+          <Loader2 className="size-3 animate-spin" /> جارٍ تفريغ ملاحظتك الصوتية (عربي أو إنجليزي)…
         </p>
       ) : null}
       {error ? <p className="mt-2.5 text-[12.5px] text-danger">{error}</p> : null}
       {status === "idle" && !error ? (
-        <p className="mt-2.5 text-[12.5px] text-fog">Speak your brief instead of typing — English or Arabic both work. We&apos;ll transcribe it into the field above.</p>
+        <p className="mt-2.5 text-[12.5px] text-fog">تحدّث بدلاً من الكتابة — العربية والإنجليزية كلاهما يعملان. سنفرّغ الصوت مباشرة في الحقل أعلاه.</p>
       ) : null}
     </div>
   );

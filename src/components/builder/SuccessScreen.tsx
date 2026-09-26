@@ -15,9 +15,9 @@ export interface SubmissionResult {
 }
 
 const NEXT_STEPS = [
-  { icon: ScanSearch, title: "Scope analysis", body: "Our studio assistant maps your brief to deliverables, phases and our rate card." },
-  { icon: FileText, title: "Strategist review", body: "A strategist refines the scope and investment before anything is sent." },
-  { icon: Sparkles, title: "Your proposal", body: "You receive a tailored proposal with a PDF and a link to accept online." },
+  { icon: ScanSearch, title: "تحليل النطاق", body: "يقوم مساعدنا بمطابقة تفاصيل مشروعك مع التسليمات والمراحل وقائمة أسعارنا." },
+  { icon: FileText, title: "مراجعة استراتيجية", body: "يصقل استراتيجي النطاق والاستثمار قبل إرسال أي شيء." },
+  { icon: Sparkles, title: "عرضك الخاص", body: "تستلم عرضاً مصمّماً لك مع ملف PDF ورابط للموافقة أونلاين." },
 ];
 
 export function SuccessScreen({ result, variant, onRestart }: { result: SubmissionResult; variant: BuilderVariant; onRestart: () => void }) {
@@ -63,25 +63,25 @@ export function SuccessScreen({ result, variant, onRestart }: { result: Submissi
         </defs>
       </svg>
 
-      <p className="relative mt-6 font-mono text-[11px] uppercase tracking-[0.3em] text-ember-300">Brief received</p>
-      <h2 className="relative mt-3 font-display text-[34px] leading-tight tracking-tight text-ivory sm:text-[44px]">
-        Thank you{result.name ? `, ${result.name}` : ""}. <span className="font-wonk italic text-ember-gradient">We&apos;re on it.</span>
+      <p className="relative mt-6 font-mono text-[11px] uppercase tracking-[0.3em] text-ember-300">تم استلام ملخص مشروعك</p>
+      <h2 className="relative mt-3 font-display text-[30px] leading-tight text-ivory sm:text-[40px]">
+        شكراً لك{result.name ? ` ${result.name}` : ""}. <span className="text-ember-gradient">نحن نعمل على الأمر.</span>
       </h2>
       <p className="relative mx-auto mt-3 max-w-lg text-[15px] leading-relaxed text-mist">
-        Your brief is with the studio. We&apos;ll email your tailored proposal once a strategist has reviewed it — keep your reference handy if you&apos;d
-        like to talk to us in the meantime.
+        ملخص مشروعك وصل إلى الاستوديو. سنرسل لك عرضاً مخصصاً عبر البريد الإلكتروني بعد مراجعة استراتيجي له — احتفظ برقمك المرجعي إن أردت
+        التواصل معنا بالمثل.
       </p>
 
       <div className="relative mt-7 inline-flex flex-wrap items-center justify-center gap-3">
-        <span className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-3 font-mono text-[15px] tracking-[0.18em] text-ivory">{result.reference}</span>
+        <span dir="ltr" className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-3 font-mono text-[15px] tracking-[0.18em] text-ivory">{result.reference}</span>
         {result.estimate && result.estimate.max > 0 ? (
           <span className="rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-3 text-[14px] text-mist">
-            Indicative {formatRange(result.estimate.min, result.estimate.max, CURRENCY)} · {result.estimate.weeksMin}–{result.estimate.weeksMax} weeks
+            تقديرياً {formatRange(result.estimate.min, result.estimate.max, CURRENCY)} · {result.estimate.weeksMin}–{result.estimate.weeksMax} أسابيع
           </span>
         ) : null}
       </div>
 
-      <ol className="relative mt-10 grid gap-3 text-left sm:grid-cols-3">
+      <ol className="relative mt-10 grid gap-3 text-start sm:grid-cols-3">
         {NEXT_STEPS.map((item, index) => (
           <motion.li
             key={item.title}
@@ -103,19 +103,19 @@ export function SuccessScreen({ result, variant, onRestart }: { result: Submissi
         {brand.bookingUrl ? (
           <a href={brand.bookingUrl} target="_blank" rel="noreferrer">
             <Button size="lg">
-              <CalendarClock className="size-4" /> Book an intro call
+              <CalendarClock className="size-4" /> احجز مكالمة تعريفية
             </Button>
           </a>
         ) : null}
         {variant === "page" ? (
           <a href={brand.siteUrl}>
             <Button size="lg" variant="secondary">
-              Back to {brand.shortName} <ArrowUpRight className="size-4" />
+              <ArrowUpRight className="size-4" /> العودة إلى {brand.shortName}
             </Button>
           </a>
         ) : null}
         <Button size="lg" variant="ghost" onClick={onRestart}>
-          Start another brief
+          إرسال ملخص مشروع آخر
         </Button>
       </div>
     </motion.div>

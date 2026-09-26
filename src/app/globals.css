@@ -80,6 +80,17 @@
   }
 }
 
+/*
+ * Arabic client-facing surfaces (Project Builder, client portal, embed) set
+ * dir="rtl" on their own root element (not the shared layouts, which also
+ * serve the English admin dashboard) and swap to Cairo, the only one of the
+ * brand fonts with Arabic glyphs.
+ */
+[dir="rtl"] {
+  --font-display: var(--font-cairo), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-cairo), ui-sans-serif, system-ui, sans-serif;
+}
+
 @layer base {
   :root {
     color-scheme: dark;
