@@ -89,8 +89,8 @@ const first = String(lead.contact.name).split(" ")[0];
 const html = emailLayout({
   title: p.title,
   bodyHtml: "<p>Hi " + esc(first) + ",</p>" +
-    "<p>Thank you for your patience — your tailored proposal is ready. It covers the scope, a " + esc(p.display.duration) + " timeline and a total investment of <b>" + esc(p.display.total) + "</b>" + (p.display.monthly ? " (plus " + esc(p.display.monthly) + ")" : "") + ".</p>" +
-    "<p>The PDF is attached. You can also review it online and accept it in a couple of clicks — the link is private to you and valid until " + esc(p.validUntil) + ".</p>" +
+    "<p>Thank you for your patience — your tailored proposal is ready. It covers the full scope, a timeline of " + esc(p.display.duration) + " and a total investment of <b>" + esc(p.display.total) + "</b>" + (p.display.monthly ? " (plus " + esc(p.display.monthly) + ")" : "") + ".</p>" +
+    "<p>The PDF is attached. You can also review it online and accept it in a couple of clicks — the link is private to you and valid until " + esc(p.display.validUntil || p.validUntil) + ".</p>" +
     "<p>Happy to walk you through it on a call — just reply to this email.</p>",
   ctaUrl: body.links.proposal,
   ctaLabel: "Review & accept your proposal",
