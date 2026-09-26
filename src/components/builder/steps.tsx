@@ -532,7 +532,14 @@ export function ContactStep({ draft, update, errors }: StepProps) {
           <Label htmlFor="contact-phone" optional="اختياري">
             الهاتف
           </Label>
-          <Input {...field("phone")} type="tel" autoComplete="tel" placeholder="+961 …" value={contact.phone} onChange={(e) => update("contact", { phone: e.target.value })} />
+          <Input
+            {...field("phone")}
+            type="tel"
+            autoComplete="tel"
+            placeholder="+961 …"
+            value={contact.phone}
+            onChange={(e) => update("contact", e.target.value ? { phone: e.target.value } : { phone: e.target.value, whatsapp: false, deliveryChannel: "email" })}
+          />
           <FieldError id="contact-phone-error" message={errors.phone} />
         </div>
         <div>
@@ -566,9 +573,33 @@ export function ContactStep({ draft, update, errors }: StepProps) {
 
       {contact.phone ? (
         <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
-          <Switch id="contact-whatsapp" checked={contact.whatsapp} onChange={(whatsapp) => update("contact", { whatsapp })} label="هذا الرقم على واتساب" />
+          <Switch
+            id="contact-whatsapp"
+            checked={contact.whatsapp}
+            onChange={(whatsapp) => update("contact", whatsapp ? { whatsapp } : { whatsapp, deliveryChannel: "email" })}
+            label="هذا الرقم على واتساب"
+          />
         </div>
       ) : null}
+
+      <div>
+        <Label htmlFor="contact-delivery">كيف نُرسل لك العرض؟</Label>
+        <Segmented
+          ariaLabel="طريقة إرسال العرض"
+          value={contact.deliveryChannel}
+          onChange={(deliveryChannel) => update("contact", { deliveryChannel })}
+          options={
+            contact.phone && contact.whatsapp
+              ? [
+                  { key: "email", label: "البريد الإلكتروني" },
+                  { key: "whatsapp", label: "واتساب" },
+                  { key: "both", label: "كلاهما" },
+                ]
+              : [{ key: "email", label: "البريد الإلكتروني" }]
+          }
+        />
+        <FieldError message={errors.deliveryChannel} />
+      </div>
 
       <div className="space-y-3 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
         <label className="flex cursor-pointer items-start gap-3 text-[13.5px] leading-relaxed text-mist">

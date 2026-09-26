@@ -120,8 +120,13 @@ export const ContactStepSchema = z.object({
   website: optionalUrl,
   country: optionalText(80),
   preferredContact: z.enum(CONTACT_METHOD_KEYS).default("email"),
+  /** How the proposal PDF itself should be delivered on approval (independent of `preferredContact`, which is about ongoing sales contact). */
+  deliveryChannel: z.enum(["email", "whatsapp", "both"]).default("email"),
   consent: z.literal(true, { message: "Please accept the privacy notice to continue" }),
   marketingOptIn: z.boolean().default(false),
+}).refine((data) => data.deliveryChannel === "email" || (data.phone && data.whatsapp), {
+  message: "Add a WhatsApp-enabled phone number to receive the proposal on WhatsApp",
+  path: ["deliveryChannel"],
 });
 
 /* ----------------------------------------------------------------------------

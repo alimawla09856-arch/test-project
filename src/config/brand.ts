@@ -18,6 +18,8 @@ export const brand = {
   bookingUrl: process.env.NEXT_PUBLIC_BOOKING_URL || null,
   /** E.164 digits only (no "+"), e.g. "9613123456" — used by the WhatsApp kickoff button. */
   whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || null,
+  /** Human-readable phone shown in the proposal PDF footer, e.g. "+961 3 123 456". Falls back to a formatted whatsappNumber. */
+  phoneDisplay: process.env.NEXT_PUBLIC_PHONE_DISPLAY || (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ? `+${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER}` : null),
   /** Optional line shown in footers and the proposal PDF, e.g. "Beirut · Worldwide". */
   location: process.env.NEXT_PUBLIC_STUDIO_LOCATION || null,
   /** Path (from the public/ root) to the AM logo mark, used in the navbar, portal and PDF cover. */

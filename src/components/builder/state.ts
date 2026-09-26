@@ -47,6 +47,7 @@ export interface BuilderDraft {
     website: string;
     country: string;
     preferredContact: ContactMethodKey;
+    deliveryChannel: "email" | "whatsapp" | "both";
     consent: boolean;
     marketingOptIn: boolean;
   };
@@ -78,6 +79,7 @@ export const EMPTY_DRAFT: BuilderDraft = {
     website: "",
     country: "",
     preferredContact: "email",
+    deliveryChannel: "email",
     consent: false,
     marketingOptIn: false,
   },

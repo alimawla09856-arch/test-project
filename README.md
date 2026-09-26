@@ -106,6 +106,7 @@ Copy `.env.example` to `.env.local`. Every variable is documented inline; the im
 | `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_CONTACT_EMAIL`, `NEXT_PUBLIC_BOOKING_URL`, `NEXT_PUBLIC_CURRENCY` | Brand and contact details shown to clients. |
 | `NEXT_PUBLIC_OWNER_NAME` | Principal/owner name used in the AI persona and PDF signature (default `Ali Mawla`). |
 | `NEXT_PUBLIC_WHATSAPP_NUMBER` | Digits only, international format (e.g. `9613123456`). Shows a 1-click WhatsApp kickoff button in the site header when set; hidden otherwise. |
+| `NEXT_PUBLIC_PHONE_DISPLAY` | Human-formatted phone shown in the proposal PDF footer, e.g. `+961 3 123 456`. Falls back to `NEXT_PUBLIC_WHATSAPP_NUMBER` if unset. |
 | `OPENAI_API_KEY` | Also required for **voice-note transcription** (`POST /api/v1/transcribe`, Whisper) regardless of `AI_PROVIDER`. |
 | `SESSION_SECRET` | **Required in production.** 32+ random chars: `openssl rand -base64 48`. |
 | `ADMIN_EMAIL` + `ADMIN_PASSWORD_HASH` | Dashboard login. Generate the hash with `npm run admin:hash -- "long password"`. Add more admins with `ADMIN_USERS=a@x.com:hash,b@x.com:hash`. |
@@ -174,7 +175,7 @@ Create these credentials in n8n with **exactly these names** before importing, a
 | `01-lead-intake.json` | `asd-lead-intake` | `lead.created` | Telegram (and optional WhatsApp) alert for the team, and an acknowledgement email to the client. **Second entry point** `asd-external-lead` imports leads from Typeform, Webflow, Meta Lead Ads and similar into `POST /api/v1/onboard`. |
 | `02-ai-scope-analysis.json` | `asd-ai-analysis` | `analysis.requested` | Builds the prompt (rate card, data-minimised brief, JSON schema), then calls **Claude** (default) or **OpenAI**, checks the stop reason and parses the result. Posts to `POST /api/v1/proposals` (idempotent), then sends a "draft ready" alert, or an `analysis.failed` event and a failure alert. |
 | `03-proposal-pdf.json` | `asd-proposal-pdf` | workflow 04 | A PDF microservice. `pdfEngine=app` downloads the app-rendered PDF; `pdfEngine=gotenberg` renders branded HTML with Gotenberg. Can archive to Supabase Storage. |
-| `04-client-dispatch-alerts.json` | `asd-proposal-dispatch` | `proposal.approved/accepted/declined/created` | On **approval**: fetches the PDF (via 03), emails the client the PDF and private link, reports `proposal.sent`, and alerts the team. On **acceptance**: 🎉 alert and welcome email. Also sends decline alerts and draft-ready alerts. |
+| `04-client-dispatch-alerts.json` | `asd-proposal-dispatch` | `proposal.approved/accepted/declined/created` | On **approval**: fetches the PDF (via 03) and delivers it to the client by **email and/or WhatsApp** per their chosen `deliveryChannel` (set in the Contact step), reports `proposal.sent` per channel, and alerts the team. On **acceptance**: 🎉 alert and welcome email. Also sends decline alerts and draft-ready alerts. |
 | `05-crm-sync.json` | `asd-crm-sync` | `crm.sync` (every change) | Upserts one record per lead, keyed on **Reference**, into Airtable, Notion and/or Supabase, and reports the record ids back. |
 
 ### 3. Configure & activate
@@ -193,7 +194,9 @@ N8N_CALLBACK_SECRET=<same secret as the "App API" credential>
 
 **Finding your Telegram chat id:** add the bot to a group (or message it), then open `https://api.telegram.org/bot<TOKEN>/getUpdates` and copy `chat.id`.
 
-**WhatsApp:** Meta's Cloud API only delivers free-form text to numbers that messaged your business number in the last 24 hours. For always-on alerts, create an approved **template** and switch the node body to `type: "template"`.
+**WhatsApp:** Meta's Cloud API only delivers free-form text to numbers that messaged your business number in the last 24 hours. For always-on team alerts (`WhatsApp · Sent`, `WhatsApp · Accepted`), create an approved **template** and switch those node bodies to `type: "template"`.
+
+**WhatsApp to clients:** workflow 04's `Send Client WhatsApp` node already sends `type: "template"` (a client almost never messaged you first). Before enabling `whatsappEnabled`, create and get approved a Meta message template whose body takes three variables — e.g. "Hi {{1}}, your proposal is ready — {{2}}. Review and accept: {{3}}" — and set its exact name in the `whatsappClientTemplateName` Config field. A client is only offered the WhatsApp/Both delivery option in the Project Builder if they marked their phone number as WhatsApp-enabled.
 
 ### CRM field mapping
 
@@ -325,7 +328,7 @@ The image is the Next.js **standalone** build (`NEXT_OUTPUT=standalone`) and run
 | AI system prompt & user message | `src/lib/ai/prompt.ts` |
 | Structured output contract | `src/lib/schemas/analysis.ts` |
 | Rule-based estimator (no-AI mode & fallback) | `src/lib/ai/heuristic.ts` |
-| Brand name, principal/owner name (AI persona + PDF signature), monogram, WhatsApp kickoff number, colours for the PDF, contact details | `src/config/brand.ts` + `NEXT_PUBLIC_*` vars (`NEXT_PUBLIC_OWNER_NAME`, `NEXT_PUBLIC_WHATSAPP_NUMBER`) |
+| Brand name, principal/owner name (AI persona + PDF signature), monogram, WhatsApp kickoff number, phone shown in the PDF footer, colours for the PDF, contact details | `src/config/brand.ts` + `NEXT_PUBLIC_*` vars (`NEXT_PUBLIC_OWNER_NAME`, `NEXT_PUBLIC_WHATSAPP_NUMBER`, `NEXT_PUBLIC_PHONE_DISPLAY`) |
 | Design tokens (colours, fonts, glass utilities) | `src/app/globals.css` (Tailwind v4 `@theme`) |
 | Proposal PDF layout | `src/lib/pdf/ProposalDocument.tsx` |
 | Email templates | Code nodes in n8n workflows 01 and 04 (`n8n/src/snippets.ts` for the shared layout) |

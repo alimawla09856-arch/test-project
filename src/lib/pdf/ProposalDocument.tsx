@@ -161,6 +161,7 @@ export function ProposalDocument({ proposal, lead, shareUrl, fonts }: ProposalDo
       </View>
       <View style={styles.footer} fixed>
         <Text style={styles.footerText}>{`${proposal.title} · v${proposal.version}`}</Text>
+        <Text style={styles.footerText}>{[brand.contactEmail, brand.phoneDisplay].filter(Boolean).join("  ·  ")}</Text>
         <Text style={styles.footerText} render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
       </View>
     </>

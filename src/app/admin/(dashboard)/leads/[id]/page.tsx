@@ -166,6 +166,7 @@ export default async function LeadDetailPage({ params }: PageProps<"/admin/leads
                 </Row>
               ) : null}
               <Row label="Prefers">{labelFor(CONTACT_METHODS, contact.preferredContact)}</Row>
+              <Row label="Proposal delivery">{{ email: "Email", whatsapp: "WhatsApp", both: "Email + WhatsApp" }[contact.deliveryChannel]}</Row>
               <Row label="Source">
                 {lead.source}
                 {lead.meta.utm?.source ? ` · ${lead.meta.utm.source}${lead.meta.utm.medium ? `/${lead.meta.utm.medium}` : ""}` : ""}

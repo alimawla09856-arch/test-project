@@ -15,7 +15,7 @@ const whatsapp = (name: string, position: [number, number], textExpression: stri
 export function clientDispatchWorkflow() {
   const wf = new WorkflowBuilder(
     NAME,
-    "Receives proposal lifecycle events. On approval: fetches the PDF (workflow 03), emails the client, reports proposal.sent and alerts the team on Telegram/WhatsApp. Also handles acceptance, decline and draft-ready alerts.",
+    "Receives proposal lifecycle events. On approval: fetches the PDF (workflow 03), delivers it to the client by email and/or WhatsApp per their delivery preference, reports proposal.sent per channel and alerts the team on Telegram/WhatsApp. Also handles acceptance, decline and draft-ready alerts.",
     ["AS Design Studio", "Dispatch"],
   );
 
@@ -24,13 +24,15 @@ export function clientDispatchWorkflow() {
       "## 04 · Client Dispatch & Admin Alerts",
       "**Trigger:** the app POSTs proposal events here.",
       "",
-      "- `proposal.approved` → PDF from workflow 03 → **email to client** with PDF + private link → `proposal.sent` reported to the app → Telegram / WhatsApp alert",
+      "- `proposal.approved` → PDF from workflow 03 → delivered to the client by **email and/or WhatsApp**, per `lead.contact.deliveryChannel` (`email` | `whatsapp` | `both`) → `proposal.sent` reported to the app per channel → Telegram / WhatsApp alert to the team",
       "- `proposal.accepted` → 🎉 alert + **welcome email** with kickoff link",
       "- `proposal.declined` → alert with the client's note",
       "- `proposal.created` → *draft ready for review* alert (only sent when the app runs the AI itself)",
       "",
+      "**Client WhatsApp delivery** requires an approved Meta message **template** (Cloud API can't send free-form text to a client who hasn't messaged you in the last 24h). Create one in Meta Business Manager with a body of the form \"Hi {{1}}, your proposal is ready — {{2}}. Review and accept: {{3}}\" and set its name in `whatsappClientTemplateName` below.",
+      "",
       "**Credentials:** *ASD · Webhook auth* (also used to call workflow 03), *ASD · App API*, *ASD · SMTP*, *ASD · Telegram bot*, *ASD · WhatsApp Cloud API token*.",
-    ].join("\n"), { width: 440, height: 380 }, 6),
+    ].join("\n"), { width: 460, height: 440 }, 6),
   );
 
   wf.add(webhook("Dispatch Webhook", "asd-proposal-dispatch", [0, 0], NAME));
@@ -43,6 +45,7 @@ export function clientDispatchWorkflow() {
       { name: "whatsappEnabled", value: false },
       { name: "whatsappPhoneNumberId", value: "REPLACE_WITH_META_PHONE_NUMBER_ID" },
       { name: "adminWhatsappNumber", value: "9617XXXXXXX" },
+      { name: "whatsappClientTemplateName", value: "proposal_ready" },
       { name: "fromEmail", value: "proposals@asdesignlb.com" },
       { name: "fromName", value: "Ali Mawla · AS Design Studio" },
       { name: "replyTo", value: "proposals@asdesignlb.com" },
@@ -100,23 +103,81 @@ if (binary.data) binary.data.fileName = lead.reference + "-proposal-v" + p.versi
 return [{ json: { to: lead.contact.email, subject: "Your proposal from " + $('Config').first().json.fromName + " · " + lead.reference, html }, binary }];`,
     ),
   );
-  wf.add(email("Email Proposal to Client", [1340, -240], { to: "={{ $json.to }}", subject: "={{ $json.subject }}", html: "={{ $json.html }}", attachments: "data" }));
-  wf.add(
-    reportEvent(
-      "Report proposal.sent",
-      [1560, -240],
-      "{ type: 'proposal.sent', proposalId: $('Dispatch Webhook').first().json.body.proposal.id, data: { channel: 'email', to: $('Compose Proposal Email').first().json.to, executionId: $execution.id } }",
-    ),
-  );
   wf.add(
     telegram(
       "Telegram · Sent",
-      [1780, -300],
+      [1340, -420],
       "={{ '📤 <b>Proposal sent</b> · ' + $('Dispatch Webhook').first().json.body.lead.reference + '\\n' + $('Dispatch Webhook').first().json.body.lead.display.name + ' — ' + $('Dispatch Webhook').first().json.body.proposal.display.total + '\\n<a href=\"' + $('Dispatch Webhook').first().json.body.links.admin + '\">Open lead →</a>' }}",
     ),
   );
-  wf.add(ifNode("WhatsApp? (sent)", [1780, -160], { left: "={{ $('Config').first().json.whatsappEnabled }}", op: "true" }, NAME));
-  wf.add(whatsapp("WhatsApp · Sent", [2000, -160], "'Proposal sent: ' + $('Dispatch Webhook').first().json.body.lead.reference + ' · ' + $('Dispatch Webhook').first().json.body.proposal.display.total"));
+  wf.add(ifNode("WhatsApp? (sent)", [1340, -360], { left: "={{ $('Config').first().json.whatsappEnabled }}", op: "true" }, NAME));
+  wf.add(whatsapp("WhatsApp · Sent", [1560, -360], "'Proposal sent: ' + $('Dispatch Webhook').first().json.body.lead.reference + ' · ' + $('Dispatch Webhook').first().json.body.proposal.display.total"));
+
+  /* ---- client delivery: email leg (deliveryChannel: email | both, or unset) ---- */
+  wf.add(
+    ifNode(
+      "Client wants email?",
+      [1340, -240],
+      { left: "={{ $('Dispatch Webhook').first().json.body.lead.contact.deliveryChannel !== 'whatsapp' }}", op: "true" },
+      NAME,
+    ),
+  );
+  wf.add(email("Email Proposal to Client", [1560, -240], { to: "={{ $json.to }}", subject: "={{ $json.subject }}", html: "={{ $json.html }}", attachments: "data" }));
+  wf.add(
+    reportEvent(
+      "Report proposal.sent (email)",
+      [1780, -240],
+      "{ type: 'proposal.sent', proposalId: $('Dispatch Webhook').first().json.body.proposal.id, data: { channel: 'email', to: $('Compose Proposal Email').first().json.to, executionId: $execution.id } }",
+    ),
+  );
+
+  /* -- client delivery: WhatsApp leg (deliveryChannel: whatsapp | both, template message) -- */
+  wf.add(
+    ifNode(
+      "Client wants WhatsApp?",
+      [1340, -100],
+      {
+        left:
+          "={{ $('Config').first().json.whatsappEnabled && $('Dispatch Webhook').first().json.body.lead.contact.deliveryChannel !== 'email' && $('Dispatch Webhook').first().json.body.lead.contact.whatsapp === true }}",
+        op: "true",
+      },
+      NAME,
+    ),
+  );
+  wf.add(
+    code(
+      "Compose Client WhatsApp",
+      [1560, -100],
+      String.raw`
+const body = $('Dispatch Webhook').first().json.body;
+const lead = body.lead, p = body.proposal;
+const first = String(lead.contact.name).split(" ")[0];
+const digits = String(lead.contact.phone || "").replace(/[^0-9]/g, "");
+return [{ json: {
+  to: digits,
+  template: $('Config').first().json.whatsappClientTemplateName,
+  param1: first,
+  param2: p.display.total,
+  param3: body.links.proposal,
+} }];`,
+    ),
+  );
+  wf.add({
+    ...http("Send Client WhatsApp", [1780, -100], {
+      url: "=https://graph.facebook.com/v21.0/{{ $('Config').first().json.whatsappPhoneNumberId }}/messages",
+      auth: "whatsapp",
+      jsonBody:
+        "={{ JSON.stringify({ messaging_product: 'whatsapp', to: $json.to, type: 'template', template: { name: $json.template, language: { code: 'en_US' }, components: [{ type: 'body', parameters: [ { type: 'text', text: $json.param1 }, { type: 'text', text: $json.param2 }, { type: 'text', text: $json.param3 } ] }] } }) }}",
+    }),
+    onError: "continueRegularOutput" as const,
+  });
+  wf.add(
+    reportEvent(
+      "Report proposal.sent (whatsapp)",
+      [2000, -100],
+      "{ type: 'proposal.sent', proposalId: $('Dispatch Webhook').first().json.body.proposal.id, data: { channel: 'whatsapp', to: $('Compose Client WhatsApp').first().json.to, executionId: $execution.id } }",
+    ),
+  );
 
   /* --------------------------- accepted → celebrate ------------------------ */
   wf.add(
@@ -177,10 +238,16 @@ return [{ json: { to: lead.contact.email, subject: "Welcome to " + cfg.fromName 
   wf.connect("Route Event", "Telegram · Declined", 2);
   wf.connect("Route Event", "Telegram · Draft Ready", 3);
   wf.connect("Route Event", "Ignore (test / other)", 4);
-  wf.chain("Get PDF (workflow 03)", "Compose Proposal Email", "Email Proposal to Client", "Report proposal.sent");
-  wf.connect("Report proposal.sent", "Telegram · Sent");
-  wf.connect("Report proposal.sent", "WhatsApp? (sent)");
+  wf.chain("Get PDF (workflow 03)", "Compose Proposal Email");
+  wf.connect("Compose Proposal Email", "Telegram · Sent");
+  wf.connect("Compose Proposal Email", "WhatsApp? (sent)");
   wf.connect("WhatsApp? (sent)", "WhatsApp · Sent", 0);
+  wf.connect("Compose Proposal Email", "Client wants email?");
+  wf.connect("Client wants email?", "Email Proposal to Client", 0);
+  wf.chain("Email Proposal to Client", "Report proposal.sent (email)");
+  wf.connect("Compose Proposal Email", "Client wants WhatsApp?");
+  wf.connect("Client wants WhatsApp?", "Compose Client WhatsApp", 0);
+  wf.chain("Compose Client WhatsApp", "Send Client WhatsApp", "Report proposal.sent (whatsapp)");
   wf.connect("Telegram · Accepted", "WhatsApp? (accepted)");
   wf.connect("WhatsApp? (accepted)", "WhatsApp · Accepted", 0);
   wf.chain("Compose Welcome Email", "Send Welcome Email", "Report Welcome Email");

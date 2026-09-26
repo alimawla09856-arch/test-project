@@ -11,9 +11,9 @@
         -320
       ],
       "parameters": {
-        "content": "## 04 · Client Dispatch & Admin Alerts\n**Trigger:** the app POSTs proposal events here.\n\n- `proposal.approved` → PDF from workflow 03 → **email to client** with PDF + private link → `proposal.sent` reported to the app → Telegram / WhatsApp alert\n- `proposal.accepted` → 🎉 alert + **welcome email** with kickoff link\n- `proposal.declined` → alert with the client's note\n- `proposal.created` → *draft ready for review* alert (only sent when the app runs the AI itself)\n\n**Credentials:** *ASD · Webhook auth* (also used to call workflow 03), *ASD · App API*, *ASD · SMTP*, *ASD · Telegram bot*, *ASD · WhatsApp Cloud API token*.",
-        "width": 440,
-        "height": 380,
+        "content": "## 04 · Client Dispatch & Admin Alerts\n**Trigger:** the app POSTs proposal events here.\n\n- `proposal.approved` → PDF from workflow 03 → delivered to the client by **email and/or WhatsApp**, per `lead.contact.deliveryChannel` (`email` | `whatsapp` | `both`) → `proposal.sent` reported to the app per channel → Telegram / WhatsApp alert to the team\n- `proposal.accepted` → 🎉 alert + **welcome email** with kickoff link\n- `proposal.declined` → alert with the client's note\n- `proposal.created` → *draft ready for review* alert (only sent when the app runs the AI itself)\n\n**Client WhatsApp delivery** requires an approved Meta message **template** (Cloud API can't send free-form text to a client who hasn't messaged you in the last 24h). Create one in Meta Business Manager with a body of the form \"Hi {{1}}, your proposal is ready — {{2}}. Review and accept: {{3}}\" and set its name in `whatsappClientTemplateName` below.\n\n**Credentials:** *ASD · Webhook auth* (also used to call workflow 03), *ASD · App API*, *ASD · SMTP*, *ASD · Telegram bot*, *ASD · WhatsApp Cloud API token*.",
+        "width": 460,
+        "height": 440,
         "color": 6
       }
     },
@@ -105,6 +105,12 @@
               "id": "4409be09-7abb-53d6-a81a-b74167e54e75",
               "name": "adminWhatsappNumber",
               "value": "9617XXXXXXX",
+              "type": "string"
+            },
+            {
+              "id": "db9b2356-f90e-5b51-aa61-60ec53a7248b",
+              "name": "whatsappClientTemplateName",
+              "value": "proposal_ready",
               "type": "string"
             },
             {
@@ -317,76 +323,13 @@
       }
     },
     {
-      "id": "05fc41a8-720a-55d1-a8fc-c6b5952b94f8",
-      "name": "Email Proposal to Client",
-      "type": "n8n-nodes-base.emailSend",
-      "typeVersion": 2.1,
-      "position": [
-        1340,
-        -240
-      ],
-      "parameters": {
-        "fromEmail": "={{ $('Config').first().json.fromName + ' <' + $('Config').first().json.fromEmail + '>' }}",
-        "toEmail": "={{ $json.to }}",
-        "subject": "={{ $json.subject }}",
-        "emailFormat": "html",
-        "html": "={{ $json.html }}",
-        "options": {
-          "appendAttribution": false,
-          "replyTo": "={{ $('Config').first().json.replyTo }}",
-          "attachments": "data"
-        }
-      },
-      "credentials": {
-        "smtp": {
-          "id": "f05ced84d43e5b",
-          "name": "ASD · SMTP"
-        }
-      },
-      "retryOnFail": true,
-      "maxTries": 2,
-      "waitBetweenTries": 5000
-    },
-    {
-      "id": "e4957308-da0b-5dc6-a989-9146b6d92455",
-      "name": "Report proposal.sent",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1560,
-        -240
-      ],
-      "parameters": {
-        "method": "POST",
-        "url": "={{ $('Config').first().json.appBaseUrl }}/api/v1/events",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ type: 'proposal.sent', proposalId: $('Dispatch Webhook').first().json.body.proposal.id, data: { channel: 'email', to: $('Compose Proposal Email').first().json.to, executionId: $execution.id } }) }}",
-        "options": {
-          "timeout": 15000
-        }
-      },
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "45c2e32a41e157",
-          "name": "ASD · App API (n8n → app)"
-        }
-      },
-      "retryOnFail": true,
-      "maxTries": 3,
-      "waitBetweenTries": 3000,
-      "onError": "continueRegularOutput"
-    },
-    {
       "id": "66869b1d-ec06-529f-adcf-eb15ef9b46b7",
       "name": "Telegram · Sent",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1780,
-        -300
+        1340,
+        -420
       ],
       "parameters": {
         "chatId": "={{ $('Config').first().json.telegramChatId }}",
@@ -411,8 +354,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1780,
-        -160
+        1340,
+        -360
       ],
       "parameters": {
         "conditions": {
@@ -445,8 +388,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2000,
-        -160
+        1560,
+        -360
       ],
       "parameters": {
         "method": "POST",
@@ -464,6 +407,214 @@
         "httpHeaderAuth": {
           "id": "977e5706ffc858",
           "name": "ASD · WhatsApp Cloud API token"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "c28e4003-bea7-5c1e-ad49-70e634784f76",
+      "name": "Client wants email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1340,
+        -240
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e5f27f08-7071-576a-a1c5-7767531827f5",
+              "leftValue": "={{ $('Dispatch Webhook').first().json.body.lead.contact.deliveryChannel !== 'whatsapp' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "05fc41a8-720a-55d1-a8fc-c6b5952b94f8",
+      "name": "Email Proposal to Client",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1560,
+        -240
+      ],
+      "parameters": {
+        "fromEmail": "={{ $('Config').first().json.fromName + ' <' + $('Config').first().json.fromEmail + '>' }}",
+        "toEmail": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailFormat": "html",
+        "html": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false,
+          "replyTo": "={{ $('Config').first().json.replyTo }}",
+          "attachments": "data"
+        }
+      },
+      "credentials": {
+        "smtp": {
+          "id": "f05ced84d43e5b",
+          "name": "ASD · SMTP"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "639f51c2-8746-5840-ae72-e61910e8a858",
+      "name": "Report proposal.sent (email)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1780,
+        -240
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json.appBaseUrl }}/api/v1/events",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ type: 'proposal.sent', proposalId: $('Dispatch Webhook').first().json.body.proposal.id, data: { channel: 'email', to: $('Compose Proposal Email').first().json.to, executionId: $execution.id } }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "45c2e32a41e157",
+          "name": "ASD · App API (n8n → app)"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "7bb2b1b4-9b75-59d7-ad1c-a92901aeca8e",
+      "name": "Client wants WhatsApp?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1340,
+        -100
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c60438ec-98a2-54cc-a06d-dda80d5d9826",
+              "leftValue": "={{ $('Config').first().json.whatsappEnabled && $('Dispatch Webhook').first().json.body.lead.contact.deliveryChannel !== 'email' && $('Dispatch Webhook').first().json.body.lead.contact.whatsapp === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "27c54430-f0c1-5f69-ac6f-f6b2bbda8097",
+      "name": "Compose Client WhatsApp",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1560,
+        -100
+      ],
+      "parameters": {
+        "jsCode": "\nconst body = $('Dispatch Webhook').first().json.body;\nconst lead = body.lead, p = body.proposal;\nconst first = String(lead.contact.name).split(\" \")[0];\nconst digits = String(lead.contact.phone || \"\").replace(/[^0-9]/g, \"\");\nreturn [{ json: {\n  to: digits,\n  template: $('Config').first().json.whatsappClientTemplateName,\n  param1: first,\n  param2: p.display.total,\n  param3: body.links.proposal,\n} }];"
+      }
+    },
+    {
+      "id": "398b2329-b28e-57c9-a1cf-c87ee19cd64d",
+      "name": "Send Client WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1780,
+        -100
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v21.0/{{ $('Config').first().json.whatsappPhoneNumberId }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: $json.to, type: 'template', template: { name: $json.template, language: { code: 'en_US' }, components: [{ type: 'body', parameters: [ { type: 'text', text: $json.param1 }, { type: 'text', text: $json.param2 }, { type: 'text', text: $json.param3 } ] }] } }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "977e5706ffc858",
+          "name": "ASD · WhatsApp Cloud API token"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "1c396cf1-bc3d-5329-aa2f-8b817fc041ec",
+      "name": "Report proposal.sent (whatsapp)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2000,
+        -100
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json.appBaseUrl }}/api/v1/events",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ type: 'proposal.sent', proposalId: $('Dispatch Webhook').first().json.body.proposal.id, data: { channel: 'whatsapp', to: $('Compose Client WhatsApp').first().json.to, executionId: $execution.id } }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "45c2e32a41e157",
+          "name": "ASD · App API (n8n → app)"
         }
       },
       "retryOnFail": true,
@@ -784,34 +935,22 @@
       "main": [
         [
           {
-            "node": "Email Proposal to Client",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Email Proposal to Client": {
-      "main": [
-        [
-          {
-            "node": "Report proposal.sent",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Report proposal.sent": {
-      "main": [
-        [
-          {
             "node": "Telegram · Sent",
             "type": "main",
             "index": 0
           },
           {
             "node": "WhatsApp? (sent)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Client wants email?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Client wants WhatsApp?",
             "type": "main",
             "index": 0
           }
@@ -823,6 +962,61 @@
         [
           {
             "node": "WhatsApp · Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Client wants email?": {
+      "main": [
+        [
+          {
+            "node": "Email Proposal to Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Proposal to Client": {
+      "main": [
+        [
+          {
+            "node": "Report proposal.sent (email)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Client wants WhatsApp?": {
+      "main": [
+        [
+          {
+            "node": "Compose Client WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compose Client WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Send Client WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Client WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Report proposal.sent (whatsapp)",
             "type": "main",
             "index": 0
           }
@@ -884,7 +1078,7 @@
   "tags": [],
   "meta": {
     "templateCredsSetupCompleted": false,
-    "description": "Receives proposal lifecycle events. On approval: fetches the PDF (workflow 03), emails the client, reports proposal.sent and alerts the team on Telegram/WhatsApp. Also handles acceptance, decline and draft-ready alerts."
+    "description": "Receives proposal lifecycle events. On approval: fetches the PDF (workflow 03), delivers it to the client by email and/or WhatsApp per their delivery preference, reports proposal.sent per channel and alerts the team on Telegram/WhatsApp. Also handles acceptance, decline and draft-ready alerts."
   },
   "active": false
 }
