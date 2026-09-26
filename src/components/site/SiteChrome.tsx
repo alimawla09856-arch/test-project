@@ -1,6 +1,7 @@
 import { ArrowUpRight } from "lucide-react";
 import { brand } from "@/config/brand";
 import { Logo } from "@/components/ui/Logo";
+import { WhatsAppButton } from "./WhatsAppButton";
 
 export function SiteHeader() {
   return (
@@ -10,6 +11,7 @@ export function SiteHeader() {
         <a href="#how-it-works" className="hidden rounded-full px-3 py-2 text-mist transition hover:text-ivory sm:inline-block">
           How it works
         </a>
+        <WhatsAppButton />
         <a
           href={brand.siteUrl}
           className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-2 text-mist transition hover:border-white/25 hover:text-ivory"

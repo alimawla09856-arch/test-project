@@ -30,7 +30,7 @@ Supabase (Postgres + RLS) · Anthropic SDK · OpenAI SDK · react-pdf · n8n
 
 | Surface | Route | Highlights |
 |---|---|---|
-| **Project Builder** | `/` | A six-step Framer Motion wizard: services → vision → scope → budget & timeline → contact → review. A **live blueprint** prices the project from the rate card as the client chooses. Drafts are saved to `localStorage`, with a honeypot and minimum-fill-time spam checks. |
+| **Project Builder** | `/` | A six-step Framer Motion wizard: services → vision → scope → budget & timeline → contact → review. A **live blueprint** prices the project from the rate card as the client chooses. Drafts are saved to `localStorage`, with a honeypot and minimum-fill-time spam checks. The vision step includes a **voice recorder** (mic capture, live level visualizer) that transcribes with Whisper and drops the text straight into the brief — English and Arabic (Gulf/Lebanese) both work, auto-detected. |
 | **Embeddable builder** | `/embed` + `/widget.js` | Inline or popup embed for asdesignlb.com, with auto-height, UTM forwarding and an `asd:lead-submitted` DOM event. |
 | **Client proposal portal** | `/p/{token}` | A private, branded proposal page: scope by phase, Gantt timeline, investment and payment schedule. The client can download the PDF and **accept or decline online**. Views are tracked. |
 | **Proposal PDF** | `/p/{token}/pdf`, `/api/v1/proposals/{id}/pdf` | An A4 PDF rendered server-side with the brand fonts (Fraunces / Hanken Grotesk). |
@@ -104,6 +104,9 @@ Copy `.env.example` to `.env.local`. Every variable is documented inline; the im
 |---|---|
 | `NEXT_PUBLIC_APP_URL` | Public URL of this app, e.g. `https://automation.asdesignlb.com`. Used in links, emails, PDFs and n8n payloads. **Build-time** (inlined). |
 | `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_CONTACT_EMAIL`, `NEXT_PUBLIC_BOOKING_URL`, `NEXT_PUBLIC_CURRENCY` | Brand and contact details shown to clients. |
+| `NEXT_PUBLIC_OWNER_NAME` | Principal/owner name used in the AI persona and PDF signature (default `Ali Mawla`). |
+| `NEXT_PUBLIC_WHATSAPP_NUMBER` | Digits only, international format (e.g. `9613123456`). Shows a 1-click WhatsApp kickoff button in the site header when set; hidden otherwise. |
+| `OPENAI_API_KEY` | Also required for **voice-note transcription** (`POST /api/v1/transcribe`, Whisper) regardless of `AI_PROVIDER`. |
 | `SESSION_SECRET` | **Required in production.** 32+ random chars: `openssl rand -base64 48`. |
 | `ADMIN_EMAIL` + `ADMIN_PASSWORD_HASH` | Dashboard login. Generate the hash with `npm run admin:hash -- "long password"`. Add more admins with `ADMIN_USERS=a@x.com:hash,b@x.com:hash`. |
 | `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` | Enables the Supabase store (server-side only). Without them: a local JSON file in `LOCAL_DATA_DIR`. |
@@ -228,6 +231,7 @@ Auth: 🔓 public · 🍪 admin session cookie · 🔑 `Authorization: Bearer N8
 | `PATCH /leads/{id}` · `DELETE /leads/{id}` | 🍪 | Status, notes and tags / permanent deletion (GDPR requests). |
 | `POST /leads/{id}/analyze` | 🍪 🔑 | Regenerate the analysis, optionally with `{ instructions }`. |
 | `POST /events` | 🔑 | **n8n target.** `proposal.sent`, `analysis.failed`, `crm.synced` (stores record ids), `email.sent`, `notification.sent`, `pdf.generated`, `custom`. |
+| `POST /transcribe` | 🔓 | Voice intake. `multipart/form-data` with an `audio` field (≤25MB) → `{ text, language, duration }` via OpenAI Whisper (auto-detects English/Arabic). Rate-limited (10 per 10 min per IP). Requires `OPENAI_API_KEY`, independent of `AI_PROVIDER`. |
 | `POST /portal/{token}/respond` | 🔓 | Client accepts (`{ decision: "accepted", name, agree: true }`) or declines. |
 | `GET /health` | 🔓 | Liveness plus a database check. Admins also see integration status. |
 | `GET /admin/stream` | 🍪 | Server-Sent Events activity feed (resumes with `Last-Event-ID`). |
@@ -321,7 +325,7 @@ The image is the Next.js **standalone** build (`NEXT_OUTPUT=standalone`) and run
 | AI system prompt & user message | `src/lib/ai/prompt.ts` |
 | Structured output contract | `src/lib/schemas/analysis.ts` |
 | Rule-based estimator (no-AI mode & fallback) | `src/lib/ai/heuristic.ts` |
-| Brand name, colours for the PDF, contact details | `src/config/brand.ts` + `NEXT_PUBLIC_*` vars |
+| Brand name, principal/owner name (AI persona + PDF signature), monogram, WhatsApp kickoff number, colours for the PDF, contact details | `src/config/brand.ts` + `NEXT_PUBLIC_*` vars (`NEXT_PUBLIC_OWNER_NAME`, `NEXT_PUBLIC_WHATSAPP_NUMBER`) |
 | Design tokens (colours, fonts, glass utilities) | `src/app/globals.css` (Tailwind v4 `@theme`) |
 | Proposal PDF layout | `src/lib/pdf/ProposalDocument.tsx` |
 | Email templates | Code nodes in n8n workflows 01 and 04 (`n8n/src/snippets.ts` for the shared layout) |

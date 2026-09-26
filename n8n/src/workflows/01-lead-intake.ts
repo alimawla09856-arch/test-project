@@ -36,9 +36,9 @@ export function leadIntakeWorkflow() {
       { name: "whatsappPhoneNumberId", value: "REPLACE_WITH_META_PHONE_NUMBER_ID" },
       { name: "adminWhatsappNumber", value: "9617XXXXXXX" },
       { name: "sendClientAck", value: true },
-      { name: "fromEmail", value: "hello@asdesignlb.com" },
-      { name: "fromName", value: "AS Design Studio" },
-      { name: "replyTo", value: "hello@asdesignlb.com" },
+      { name: "fromEmail", value: "proposals@asdesignlb.com" },
+      { name: "fromName", value: "Ali Mawla · AS Design Studio" },
+      { name: "replyTo", value: "proposals@asdesignlb.com" },
     ], NAME),
   );
   wf.add(ifNode("Is test ping?", [660, 0], { left: "={{ $('Lead Webhook').first().json.body.type }}", op: "equals", right: "test.ping" }, NAME));
