@@ -29,6 +29,7 @@ import { Segmented } from "@/components/ui/Segmented";
 import { Switch } from "@/components/ui/Switch";
 import { SERVICE_ICONS } from "./icons";
 import { toggle, type BuilderDraft } from "./state";
+import { VoiceRecorder } from "./VoiceRecorder";
 
 export interface StepProps {
   draft: BuilderDraft;
@@ -195,6 +196,12 @@ export function VisionStep({ draft, update, errors }: StepProps) {
             {length < 30 ? `${30 - length} more characters` : `${length} characters ✓`}
           </span>
         </div>
+        <VoiceRecorder
+          className="mt-3"
+          onTranscript={(text) =>
+            update("project", { description: project.description.trim() ? `${project.description.trim()}\n\n${text}` : text })
+          }
+        />
       </div>
 
       <div>

@@ -43,9 +43,9 @@ export function clientDispatchWorkflow() {
       { name: "whatsappEnabled", value: false },
       { name: "whatsappPhoneNumberId", value: "REPLACE_WITH_META_PHONE_NUMBER_ID" },
       { name: "adminWhatsappNumber", value: "9617XXXXXXX" },
-      { name: "fromEmail", value: "hello@asdesignlb.com" },
-      { name: "fromName", value: "AS Design Studio" },
-      { name: "replyTo", value: "hello@asdesignlb.com" },
+      { name: "fromEmail", value: "proposals@asdesignlb.com" },
+      { name: "fromName", value: "Ali Mawla · AS Design Studio" },
+      { name: "replyTo", value: "proposals@asdesignlb.com" },
       { name: "bookingUrl", value: "" },
     ], NAME),
   );
