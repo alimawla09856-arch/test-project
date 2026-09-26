@@ -30,7 +30,7 @@ const SAMPLES: { input: LeadSubmissionInput; stage: LeadStatus }[] = [
         references: ["https://www.example.com/inspiration"],
         assets: ["logo", "photography"],
       },
-      plan: { budget: "15k-30k", timeline: "2-4-months" },
+      plan: { budget: "1.5k-3k", timeline: "2-4-months" },
       contact: {
         name: "Rana Haddad",
         email: "rana@cedarline.example.com",
@@ -59,7 +59,7 @@ const SAMPLES: { input: LeadSubmissionInput; stage: LeadStatus }[] = [
         languages: ["en", "ar", "fr"],
         assets: ["logo", "brand-guidelines", "photography"],
       },
-      plan: { budget: "7k-15k", timeline: "1-2-months", budgetFlexible: true },
+      plan: { budget: "700-1.5k", timeline: "1-2-months", budgetFlexible: true },
       contact: {
         name: "Lea Mansour",
         email: "lea@nouratelier.example.com",
@@ -88,7 +88,7 @@ const SAMPLES: { input: LeadSubmissionInput; stage: LeadStatus }[] = [
         languages: ["en", "ar"],
         assets: ["logo", "website", "domain-hosting"],
       },
-      plan: { budget: "30k-60k", timeline: "2-4-months" },
+      plan: { budget: "3k-plus", timeline: "2-4-months" },
       contact: {
         name: "Dr. Karim Saleh",
         email: "karim@harborview.example.com",
@@ -115,7 +115,7 @@ const SAMPLES: { input: LeadSubmissionInput; stage: LeadStatus }[] = [
         languages: ["en"],
         assets: [],
       },
-      plan: { budget: "15k-30k", timeline: "flexible" },
+      plan: { budget: "1.5k-3k", timeline: "flexible" },
       contact: {
         name: "Omar Khoury",
         email: "omar@atlasfreight.example.com",
@@ -141,7 +141,7 @@ const SAMPLES: { input: LeadSubmissionInput; stage: LeadStatus }[] = [
         languages: ["en", "ar"],
         assets: ["logo"],
       },
-      plan: { budget: "under-3k", timeline: "asap" },
+      plan: { budget: "under-300", timeline: "asap" },
       contact: {
         name: "Maya Aoun",
         email: "maya@oliveember.example.com",

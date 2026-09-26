@@ -333,7 +333,7 @@ The image is the Next.js **standalone** build (`NEXT_OUTPUT=standalone`) and run
 | Proposal PDF layout | `src/lib/pdf/ProposalDocument.tsx` |
 | Email templates | Code nodes in n8n workflows 01 and 04 (`n8n/src/snippets.ts` for the shared layout) |
 
-> The prices in `catalog.ts` are **placeholders**. Replace them with the studio's real rates before going live.
+> Prices in `catalog.ts` are calibrated to AS Design's real, published rate card on asdesignlb.com/pricing. Re-sync them by hand if the published rates change — nothing here reads that page live.
 
 ---
 

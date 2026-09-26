@@ -3,7 +3,8 @@
 /*
  * AS Design Studio — "Obsidian Atelier" design system.
  * Obsidian canvas, aurora light (ember · glacier · iris), frosted glass, film grain.
- * ember + navy are extracted from the Ali Mawla (AM) logo mark (#d86f10 / #091873).
+ * ember-500 / navy-600 are pinned to the exact --orange / --navy values used on
+ * asdesignlb.com's globals.css, so the two properties share one brand accent.
  */
 
 @theme {
@@ -21,14 +22,14 @@
   --color-ember-200: #f4a965;
   --color-ember-300: #f19745;
   --color-ember-400: #ee7e19;
-  --color-ember-500: #d86f10;
+  --color-ember-500: #d36707;
   --color-ember-600: #ac590d;
   --color-ember-700: #733b08;
 
   --color-navy-300: #1230e7;
   --color-navy-400: #0f27bb;
   --color-navy-500: #0c219f;
-  --color-navy-600: #091873;
+  --color-navy-600: #07146c;
   --color-navy-700: #040c39;
 
   --color-glacier-200: #c8f8f0;

@@ -119,18 +119,21 @@ export function estimateProject(input: EstimateInput, overrides?: PricingOverrid
   const discountRate = bundleDiscountRate(services.length);
   let min = lines.reduce((sum, line) => sum + line.min, 0) * (1 - discountRate);
   let max = lines.reduce((sum, line) => sum + line.max, 0) * (1 - discountRate);
-  min = roundTo(min, 100);
-  max = Math.max(min, roundTo(max, 100));
+  // Rounding steps are scaled to AS Design's real (much smaller) rate card —
+  // rounding to the nearest 100 made sense for $4k-$45k placeholder prices, but
+  // collapses distinct outcomes at $150-$1,700 real prices.
+  min = roundTo(min, 25);
+  max = Math.max(min, roundTo(max, 25));
 
   const monthlyMin = roundTo(
     services.reduce((sum, s) => sum + (s.monthly?.min ?? 0), 0) +
       features.reduce((sum, f) => sum + (f.monthly ?? 0), 0),
-    10,
+    5,
   );
   const monthlyMax = roundTo(
     services.reduce((sum, s) => sum + (s.monthly?.max ?? 0), 0) +
       features.reduce((sum, f) => sum + (f.monthly ?? 0), 0),
-    10,
+    5,
   );
 
   // Services run as parallel tracks: the longest one sets the pace and each
@@ -168,7 +171,7 @@ export function estimateProject(input: EstimateInput, overrides?: PricingOverrid
     weeksMin,
     weeksMax,
     discountRate,
-    lines: lines.map((line) => ({ ...line, min: roundTo(line.min, 50), max: roundTo(line.max, 50) })),
+    lines: lines.map((line) => ({ ...line, min: roundTo(line.min, 10), max: roundTo(line.max, 10) })),
     phases,
   };
 }

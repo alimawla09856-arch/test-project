@@ -14,7 +14,7 @@ export const sampleInput: LeadSubmissionInput = {
     references: ["dribbble.com/shots/1"],
     assets: ["logo"],
   },
-  plan: { budget: "15k-30k", timeline: "2-4-months" },
+  plan: { budget: "1.5k-3k", timeline: "2-4-months" },
   contact: { name: "Rana Haddad", email: "Rana@Example.com", company: "Cedarline", consent: true },
 };
 

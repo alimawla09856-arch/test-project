@@ -9,8 +9,12 @@
  *   • the n8n workflow templates (regenerate them with `npm run n8n:build`
  *     after editing this file).
  *
- * All amounts are in `CURRENCY`. The figures below are sensible placeholders for a
- * premium studio — replace them with the studio's actual rates before going live.
+ * All amounts are in `CURRENCY`. The figures below are calibrated to AS Design's real,
+ * published rate card on asdesignlb.com/pricing (regular prices, i.e. before the site's
+ * current 25%-off promo). Where asdesignlb.com doesn't list a standalone price for a
+ * category (brand-identity, ui-ux, seo-content, social-media, motion-3d), the range is
+ * a conservative estimate scaled to match the rest of the card — flag it for a real
+ * quote if the studio starts selling that work standalone.
  *
  * Keep this module free of server-only imports: it is bundled into the browser.
  */
@@ -77,8 +81,8 @@ export const SERVICES: ServiceDefinition[] = [
     name: "Brand Identity",
     tagline: "Strategy, naming, logo systems & guidelines",
     icon: "gem",
-    price: { min: 2500, max: 8000 },
-    weeks: { min: 3, max: 6 },
+    price: { min: 150, max: 600 },
+    weeks: { min: 1, max: 3 },
     deliverables: [
       { title: "Brand strategy workshop & positioning", description: "Workshops and research to define your positioning, audience, personality and messaging pillars." },
       { title: "Logo suite & visual identity system", description: "A primary logo, variations and marks, built into a flexible identity system." },
@@ -92,9 +96,11 @@ export const SERVICES: ServiceDefinition[] = [
     name: "Website Design & Build",
     tagline: "Custom, high-performance marketing sites",
     icon: "monitor",
-    price: { min: 4000, max: 15000 },
-    weeks: { min: 4, max: 10 },
-    monthly: { label: "Care & hosting plan", min: 150, max: 450 },
+    // Startup Website $150 → Business Website $350 → Enterprise + Social $650 → Custom
+    // web apps / CRMs & dashboards (asdesignlb.com/services) up to $900.
+    price: { min: 150, max: 900 },
+    weeks: { min: 1, max: 6 },
+    monthly: { label: "Care & hosting plan", min: 20, max: 60 },
     deliverables: [
       { title: "Sitemap & UX wireframes", description: "Information architecture, key user journeys and wireframes for every main template." },
       { title: "Responsive UI design", description: "High-fidelity designs for desktop, tablet and mobile, including interaction details." },
@@ -108,9 +114,10 @@ export const SERVICES: ServiceDefinition[] = [
     name: "E-commerce",
     tagline: "Shopify, headless & custom storefronts",
     icon: "shopping-bag",
-    price: { min: 6000, max: 25000 },
-    weeks: { min: 6, max: 12 },
-    monthly: { label: "Store care & optimisation", min: 250, max: 800 },
+    // Basic Storefront $450 → Advanced E-Commerce $900 → Marketplace + Social Commerce $1,600.
+    price: { min: 450, max: 1600 },
+    weeks: { min: 2, max: 8 },
+    monthly: { label: "Store care & optimisation", min: 30, max: 100 },
     deliverables: [
       { title: "Store architecture & product catalogue setup", description: "Catalogue structure, product data model, variants and collections planned for growth." },
       { title: "Storefront UI design", description: "Conversion-focused designs for home, collection, product, cart and checkout experiences." },
@@ -124,8 +131,8 @@ export const SERVICES: ServiceDefinition[] = [
     name: "UI/UX & Product Design",
     tagline: "Research, prototypes & design systems",
     icon: "pen-tool",
-    price: { min: 3000, max: 12000 },
-    weeks: { min: 3, max: 8 },
+    price: { min: 150, max: 500 },
+    weeks: { min: 1, max: 3 },
     deliverables: [
       { title: "User research & journey mapping", description: "Interviews, analytics review and journey maps that surface the highest-value opportunities." },
       { title: "Wireframes & interactive prototype", description: "Clickable prototypes to validate flows with real users before visual design." },
@@ -139,9 +146,10 @@ export const SERVICES: ServiceDefinition[] = [
     name: "Mobile App",
     tagline: "iOS & Android apps, cross-platform",
     icon: "smartphone",
-    price: { min: 12000, max: 45000 },
-    weeks: { min: 10, max: 20 },
-    monthly: { label: "App maintenance & support", min: 400, max: 1200 },
+    // Hybrid Mobile Applications (Flutter / React Native) — asdesignlb.com/services, $700.
+    price: { min: 700, max: 1800 },
+    weeks: { min: 3, max: 8 },
+    monthly: { label: "App maintenance & support", min: 40, max: 120 },
     deliverables: [
       { title: "Product scoping & technical architecture", description: "Feature prioritisation, technical architecture and a release roadmap for version one." },
       { title: "App UX/UI design", description: "Native-feeling designs for iOS and Android, from onboarding to every core flow." },
@@ -155,9 +163,11 @@ export const SERVICES: ServiceDefinition[] = [
     name: "AI & Automation",
     tagline: "AI agents, n8n workflows & integrations",
     icon: "bot",
-    price: { min: 3000, max: 15000 },
-    weeks: { min: 3, max: 8 },
-    monthly: { label: "Automation monitoring & iteration", min: 200, max: 900 },
+    // Anchored on API Development & Integration ($300, asdesignlb.com/services) as the
+    // floor; ceiling is an estimate for larger multi-workflow automation builds.
+    price: { min: 300, max: 1500 },
+    weeks: { min: 1, max: 5 },
+    monthly: { label: "Automation monitoring & iteration", min: 30, max: 120 },
     deliverables: [
       { title: "Process audit & automation blueprint", description: "Mapping today's workflows to identify the automations with the highest return." },
       { title: "Workflow implementation (n8n / APIs)", description: "Robust automations connecting your tools, with error handling and alerts." },
@@ -171,9 +181,9 @@ export const SERVICES: ServiceDefinition[] = [
     name: "SEO & Content",
     tagline: "Technical SEO, content strategy & copy",
     icon: "search",
-    price: { min: 1500, max: 6000 },
-    weeks: { min: 3, max: 8 },
-    monthly: { label: "SEO & content retainer", min: 600, max: 2000 },
+    price: { min: 150, max: 600 },
+    weeks: { min: 1, max: 3 },
+    monthly: { label: "SEO & content retainer", min: 50, max: 150 },
     deliverables: [
       { title: "Technical SEO audit", description: "A crawl-based audit of speed, indexation, structure and on-page issues, prioritised by impact." },
       { title: "Keyword & content strategy", description: "Keyword research, topic clusters and a content calendar aligned with your goals." },
@@ -187,9 +197,9 @@ export const SERVICES: ServiceDefinition[] = [
     name: "Social & Performance",
     tagline: "Social content systems & paid campaigns",
     icon: "megaphone",
-    price: { min: 1200, max: 5000 },
-    weeks: { min: 2, max: 4 },
-    monthly: { label: "Social & ads management", min: 800, max: 2500 },
+    price: { min: 150, max: 500 },
+    weeks: { min: 1, max: 2 },
+    monthly: { label: "Social & ads management", min: 60, max: 200 },
     deliverables: [
       { title: "Channel & audience strategy", description: "Which channels to prioritise, who to reach and what success looks like on each." },
       { title: "Content pillars & templates", description: "Content pillars, formats and branded templates for consistent, efficient production." },
@@ -203,8 +213,10 @@ export const SERVICES: ServiceDefinition[] = [
     name: "Motion & 3D",
     tagline: "Brand films, product renders & animation",
     icon: "clapperboard",
-    price: { min: 2000, max: 10000 },
-    weeks: { min: 2, max: 6 },
+    // Not currently a published, standalone offering on asdesignlb.com — kept for
+    // completeness with a conservative estimate. Confirm real rates before quoting.
+    price: { min: 300, max: 1200 },
+    weeks: { min: 1, max: 4 },
     deliverables: [
       { title: "Creative concept & storyboard", description: "Concept development and storyboards that align the story before production." },
       { title: "Motion design / 3D production", description: "Animation, 3D modelling and rendering crafted to your brand." },
@@ -249,21 +261,23 @@ export interface FeatureDefinition {
   monthly?: number;
 }
 
+/** Feature add-on prices are scaled down from the original placeholders to stay
+ * coherent with the real SERVICES rates above (roughly ÷15, rounded). */
 export const FEATURES: FeatureDefinition[] = [
-  { key: "cms", name: "Content management", description: "Edit pages & content without a developer", price: 900, weeks: 1 },
-  { key: "multilingual", name: "Multilingual (EN · AR · FR)", description: "Localised content incl. right-to-left Arabic", price: 1400, weeks: 1.5 },
-  { key: "booking", name: "Bookings & appointments", description: "Scheduling, availability & reminders", price: 1500, weeks: 1 },
-  { key: "payments", name: "Online payments", description: "Cards, wallets & local gateways", price: 1500, weeks: 1 },
-  { key: "accounts", name: "User accounts", description: "Sign-up, login & member areas", price: 2500, weeks: 2 },
-  { key: "blog", name: "Blog / journal", description: "Editorial templates & categories", price: 600, weeks: 0.5 },
-  { key: "crm", name: "CRM & marketing sync", description: "HubSpot, Airtable, Notion, Mailchimp…", price: 1200, weeks: 1 },
-  { key: "ai-assistant", name: "AI assistant", description: "Chat assistant trained on your content", price: 2800, weeks: 2, monthly: 120 },
-  { key: "analytics", name: "Analytics & tracking", description: "GA4, pixels, conversion events", price: 600, weeks: 0.5 },
-  { key: "dashboard", name: "Custom dashboard", description: "Internal tools & reporting views", price: 3500, weeks: 3 },
-  { key: "integrations", name: "API integrations", description: "ERP, POS, logistics & third-party APIs", price: 2200, weeks: 2 },
-  { key: "copywriting", name: "Copywriting", description: "Conversion-focused copy in your voice", price: 1200, weeks: 1 },
-  { key: "content-production", name: "Photo & video production", description: "Art-directed shoots & edits", price: 1800, weeks: 1.5 },
-  { key: "care-plan", name: "Care plan", description: "Hosting, updates, backups & support", price: 0, weeks: 0, monthly: 250 },
+  { key: "cms", name: "Content management", description: "Edit pages & content without a developer", price: 75, weeks: 1 },
+  { key: "multilingual", name: "Multilingual (EN · AR · FR)", description: "Localised content incl. right-to-left Arabic", price: 100, weeks: 1.5 },
+  { key: "booking", name: "Bookings & appointments", description: "Scheduling, availability & reminders", price: 100, weeks: 1 },
+  { key: "payments", name: "Online payments", description: "Cards, wallets & local gateways", price: 100, weeks: 1 },
+  { key: "accounts", name: "User accounts", description: "Sign-up, login & member areas", price: 150, weeks: 2 },
+  { key: "blog", name: "Blog / journal", description: "Editorial templates & categories", price: 50, weeks: 0.5 },
+  { key: "crm", name: "CRM & marketing sync", description: "HubSpot, Airtable, Notion, Mailchimp…", price: 75, weeks: 1 },
+  { key: "ai-assistant", name: "AI assistant", description: "Chat assistant trained on your content", price: 150, weeks: 2, monthly: 15 },
+  { key: "analytics", name: "Analytics & tracking", description: "GA4, pixels, conversion events", price: 50, weeks: 0.5 },
+  { key: "dashboard", name: "Custom dashboard", description: "Internal tools & reporting views", price: 200, weeks: 3 },
+  { key: "integrations", name: "API integrations", description: "ERP, POS, logistics & third-party APIs", price: 150, weeks: 2 },
+  { key: "copywriting", name: "Copywriting", description: "Conversion-focused copy in your voice", price: 75, weeks: 1 },
+  { key: "content-production", name: "Photo & video production", description: "Art-directed shoots & edits", price: 125, weeks: 1.5 },
+  { key: "care-plan", name: "Care plan", description: "Hosting, updates, backups & support", price: 0, weeks: 0, monthly: 25 },
 ];
 
 /* ----------------------------------------------------------------------------
@@ -286,16 +300,16 @@ export const SCALES: {
   { key: "enterprise", name: "Enterprise", description: "Multi-market, complex systems & governance", priceMultiplier: 1.85, weeksMultiplier: 1.6 },
 ];
 
-export const BUDGET_KEYS = ["under-3k", "3k-7k", "7k-15k", "15k-30k", "30k-60k", "60k-plus", "not-sure"] as const;
+export const BUDGET_KEYS = ["under-300", "300-700", "700-1.5k", "1.5k-3k", "3k-plus", "not-sure"] as const;
 export type BudgetKey = (typeof BUDGET_KEYS)[number];
 
+/** Buckets matched to AS Design's real project sizes ($150 startup site → $1,700 top POS tier). */
 export const BUDGETS: { key: BudgetKey; label: string; min: number | null; max: number | null }[] = [
-  { key: "under-3k", label: "Under $3k", min: 0, max: 3000 },
-  { key: "3k-7k", label: "$3k – $7k", min: 3000, max: 7000 },
-  { key: "7k-15k", label: "$7k – $15k", min: 7000, max: 15000 },
-  { key: "15k-30k", label: "$15k – $30k", min: 15000, max: 30000 },
-  { key: "30k-60k", label: "$30k – $60k", min: 30000, max: 60000 },
-  { key: "60k-plus", label: "$60k +", min: 60000, max: null },
+  { key: "under-300", label: "Under $300", min: 0, max: 300 },
+  { key: "300-700", label: "$300 – $700", min: 300, max: 700 },
+  { key: "700-1.5k", label: "$700 – $1.5k", min: 700, max: 1500 },
+  { key: "1.5k-3k", label: "$1.5k – $3k", min: 1500, max: 3000 },
+  { key: "3k-plus", label: "$3k +", min: 3000, max: null },
   { key: "not-sure", label: "Not sure yet", min: null, max: null },
 ];
 

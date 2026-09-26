@@ -9,11 +9,11 @@ describe("estimateProject", () => {
     expect(e.max).toBe(0);
   });
 
-  it("produces an ordered range rounded to 100 and positive weeks", () => {
+  it("produces an ordered range rounded to 25 and positive weeks", () => {
     const e = estimateProject({ services: ["web-design"] });
     expect(e.min).toBeGreaterThan(0);
     expect(e.max).toBeGreaterThanOrEqual(e.min);
-    expect(e.min % 100).toBe(0);
+    expect(e.min % 25).toBe(0);
     expect(e.weeksMin).toBeGreaterThanOrEqual(1);
     expect(e.weeksMax).toBeGreaterThanOrEqual(e.weeksMin);
   });

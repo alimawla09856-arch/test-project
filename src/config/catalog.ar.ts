@@ -95,12 +95,11 @@ export const SCALE_DESCRIPTIONS_AR: Record<ScaleKey, string> = {
 };
 
 export const BUDGET_LABELS_AR: Record<BudgetKey, string> = {
-  "under-3k": "أقل من 3,000$",
-  "3k-7k": "3,000$ – 7,000$",
-  "7k-15k": "7,000$ – 15,000$",
-  "15k-30k": "15,000$ – 30,000$",
-  "30k-60k": "30,000$ – 60,000$",
-  "60k-plus": "+60,000$",
+  "under-300": "أقل من 300$",
+  "300-700": "300$ – 700$",
+  "700-1.5k": "700$ – 1,500$",
+  "1.5k-3k": "1,500$ – 3,000$",
+  "3k-plus": "+3,000$",
   "not-sure": "لست متأكدًا بعد",
 };
 
