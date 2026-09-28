@@ -30,13 +30,19 @@ export function CopyBlock({ value, label }: { value: string; label?: string }) {
 
 export function TestWebhookButton({ target, disabled }: { target: "leadIntake" | "analysis" | "dispatch" | "crmSync"; disabled: boolean }) {
   const [busy, setBusy] = useState(false);
+  const [email, setEmail] = useState("");
   const run = async () => {
     setBusy(true);
     try {
-      const response = await fetch("/api/v1/admin/test-webhook", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ target }) });
+      const response = await fetch("/api/v1/admin/test-webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target, ...(target === "leadIntake" && email.trim() ? { email: email.trim() } : {}) }),
+      });
       const body = await response.json();
-      if (body.ok) toast.success(`n8n answered ${body.status} in ${body.durationMs} ms`);
-      else toast.error(body.error ?? body?.error?.message ?? "Delivery failed");
+      if (!response.ok) toast.error(body?.error?.message ?? "Delivery failed");
+      else if (body.ok) toast.success(email.trim() ? `Test lead sent — check ${email.trim()} and the admin inbox` : `n8n answered ${body.status} in ${body.durationMs} ms`);
+      else toast.error(body.error ?? "Delivery failed");
     } catch {
       toast.error("Request failed");
     } finally {
@@ -44,9 +50,21 @@ export function TestWebhookButton({ target, disabled }: { target: "leadIntake" |
     }
   };
   return (
-    <Button size="sm" variant="outline" disabled={disabled} loading={busy} onClick={run}>
-      <PlugZap className="size-3.5" /> Test
-    </Button>
+    <div className="flex items-center gap-2">
+      {target === "leadIntake" ? (
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@example.com"
+          disabled={disabled}
+          className="w-44 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-[13px] text-ivory outline-none transition placeholder:text-fog focus:border-ember-400/60 disabled:opacity-50"
+        />
+      ) : null}
+      <Button size="sm" variant="outline" disabled={disabled} loading={busy} onClick={run}>
+        <PlugZap className="size-3.5" /> {target === "leadIntake" && email.trim() ? "Send test lead" : "Test"}
+      </Button>
+    </div>
   );
 }
 
