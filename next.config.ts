@@ -28,8 +28,16 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["@react-pdf/renderer"],
   // The PDF renderer reads brand fonts from @fontsource at runtime (see src/lib/pdf/render.tsx).
   outputFileTracingIncludes: {
-    "/api/v1/proposals/*/pdf": ["./node_modules/@fontsource/fraunces/files/*latin-*.woff", "./node_modules/@fontsource/hanken-grotesk/files/*latin-*.woff"],
-    "/p/*/pdf": ["./node_modules/@fontsource/fraunces/files/*latin-*.woff", "./node_modules/@fontsource/hanken-grotesk/files/*latin-*.woff"],
+    "/api/v1/proposals/*/pdf": [
+      "./node_modules/@fontsource/fraunces/files/*latin-*.woff",
+      "./node_modules/@fontsource/hanken-grotesk/files/*latin-*.woff",
+      "./node_modules/@fontsource/cairo/files/*arabic-*.woff",
+    ],
+    "/p/*/pdf": [
+      "./node_modules/@fontsource/fraunces/files/*latin-*.woff",
+      "./node_modules/@fontsource/hanken-grotesk/files/*latin-*.woff",
+      "./node_modules/@fontsource/cairo/files/*arabic-*.woff",
+    ],
   },
   async headers() {
     return [
